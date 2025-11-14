@@ -1,0 +1,38 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting API Build Phase..."
+      - echo "Build started on $(date)"
+      - echo "Current directory - $(pwd)"
+      - echo "Checking Node version..."
+      - node --version
+      - npm --version
+      
+  build:
+    commands:
+      - echo "Building API Application..."
+      - cd packages/api
+      - npm install
+      - npm run build
+      - echo "Generating Prisma client..."
+      - npx prisma generate
+      - echo "API build completed successfully"
+      
+  post_build:
+    commands:
+      - echo "Post-build phase for API..."
+      - echo "Build completed on $(date)"
+      - ls -la dist/
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'packages/api/dist'
+  name: api-build-artifact
+
+cache:
+  paths:
+    - 'packages/api/node_modules/**/*'
+

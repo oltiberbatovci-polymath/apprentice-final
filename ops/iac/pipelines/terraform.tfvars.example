@@ -1,0 +1,22 @@
+# Example Terraform Variables File
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "staging"
+
+# Project Information
+project_name = "ApprenticeFinal"
+owner        = "YourName"
+
+# GitHub Configuration
+# You need to create a CodeStar connection first in AWS Console
+# Go to: Developer Tools > Settings > Connections
+# Create a connection to GitHub and copy the ARN here
+codestar_connection_arn = "arn:aws:codestar-connections:us-east-1:123456789012:connection/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Repository Configuration
+# Format: owner/repository-name
+repository_id = "your-github-username/apprentice-final"
+branch_name   = "main"
+

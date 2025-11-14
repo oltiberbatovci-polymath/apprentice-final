@@ -1,0 +1,36 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting Web Build Phase..."
+      - echo "Build started on $(date)"
+      - echo "Current directory - $(pwd)"
+      - echo "Checking Node version..."
+      - node --version
+      - npm --version
+      
+  build:
+    commands:
+      - echo "Building Web Application..."
+      - cd packages/web
+      - npm install
+      - npm run build
+      - echo "Web build completed successfully"
+      
+  post_build:
+    commands:
+      - echo "Post-build phase for Web..."
+      - echo "Build completed on $(date)"
+      - ls -la dist/
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'packages/web/dist'
+  name: web-build-artifact
+
+cache:
+  paths:
+    - 'packages/web/node_modules/**/*'
+
