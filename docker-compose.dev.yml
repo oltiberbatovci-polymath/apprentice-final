@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: event-planner-db-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: event_planner
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  cache:
+    image: redis:7-alpine
+    container_name: event-planner-redis-dev
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Backend (Development mode with hot reload)
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile.dev
+    container_name: event-planner-api-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/event_planner
+      - REDIS_HOST=cache
+      - REDIS_PORT=6379
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./packages/api/src:/app/src
+      - ./packages/api/prisma:/app/prisma
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             npx prisma generate &&
+             npm run dev"
+
+  # Web Frontend (Development mode with hot reload)
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile.dev
+    container_name: event-planner-web-dev
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./packages/web/src:/app/src
+      - ./packages/web/public:/app/public
+    depends_on:
+      - api
+
+volumes:
+  postgres_data_dev:
+    driver: local

@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+*.js.map
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Terraform (when you add it back)
+# terraform/.terraform/
+# terraform/*.tfstate
+# terraform/*.tfstate.*
+# terraform/*.tfvars
+# terraform/tfplan
+# terraform/crash.log
+# terraform/.terraform.lock.hcl
+
+# Docker
+*.env.docker
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Prisma
+packages/api/prisma/migrations/*_*/
+!packages/api/prisma/migrations/*/migration.sql
+
+# Package manager lock files (keep one, comment out others based on your preference)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
