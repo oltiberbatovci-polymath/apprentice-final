@@ -14,15 +14,20 @@ phases:
     commands:
       - echo "Building Web Application..."
       - cd packages/web
-      - npm install
+      - echo "Installing dependencies..."
+      - npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - echo "Dependencies installed, verifying..."
+      - ls -la node_modules/.bin/ | head -20
+      - echo "Running build..."
       - npm run build
+      - echo "Build completed, checking output..."
+      - ls -la dist/
       - echo "Web build completed successfully"
       
   post_build:
     commands:
       - echo "Post-build phase for Web..."
       - echo "Build completed on $(date)"
-      - ls -la dist/
 
 artifacts:
   files:
