@@ -63,7 +63,7 @@ module "web_pipeline" {
   repository_id           = var.repository_id
   branch_name             = var.branch_name
   buildspec_path          = "cicd/buildspec-web.yml"
-  
+
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "aws/codebuild/standard:7.0"
   build_timeout      = 30
@@ -92,7 +92,7 @@ module "api_pipeline" {
   repository_id           = var.repository_id
   branch_name             = var.branch_name
   buildspec_path          = "cicd/buildspec-api.yml"
-  
+
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "aws/codebuild/standard:7.0"
   build_timeout      = 30
@@ -121,15 +121,15 @@ module "infrastructure_pipeline" {
   repository_id           = var.repository_id
   branch_name             = var.branch_name
   buildspec_path          = "cicd/buildspec-infrastructure.yml"
-  
+
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "hashicorp/terraform:1.6"
   build_timeout      = 45
   privileged_mode    = false
 
   environment_variables = {
-    ENVIRONMENT    = var.environment
-    TF_VERSION     = "1.6.0"
+    ENVIRONMENT      = var.environment
+    TF_VERSION       = "1.6.0"
     TF_IN_AUTOMATION = "true"
   }
 
