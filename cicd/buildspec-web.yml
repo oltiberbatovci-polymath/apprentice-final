@@ -9,37 +9,54 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
+      - echo "Installing phase..."
       - echo "Node $(node --version), npm $(npm --version)"
-      - git fetch --unshallow || true
-      - git submodule update --init --recursive || true
 
   pre_build:
     commands:
-      - echo "Verifying packages/web exists..."
-      - test -d packages/web 
-      - ls -la packages/web/
-      - echo "Installing dependencies..."
+      - echo "Starting Web Build Phase..."
+      - echo "Build started on $(date)"
+      - echo "Current directory - $(pwd)"
+      - echo "Listing root directory contents..."
+      - ls -la
+      - echo "Checking for packages/web directory..."
+      - test -d packages/web || (echo "❌ ERROR - packages/web/ NOT FOUND" && exit 1)
+      - echo "✓ packages/web/ exists"
+      - echo "Installing dependencies for Web..."
       - npm install --prefix packages/web --legacy-peer-deps
-      - echo "Dependencies installed"
+      - echo "✓ Dependencies installed successfully"
+      - echo "Verifying TypeScript installation..."
+      - test -f packages/web/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "❌ ERROR - tsc not found" && exit 1)
+      - echo "Verifying Vite installation..."
+      - test -f packages/web/node_modules/.bin/vite && echo "✓ vite found" || (echo "❌ ERROR - vite not found" && exit 1)
 
   build:
     commands:
-      - echo "Compiling TypeScript..."
-      - ./packages/web/node_modules/.bin/tsc --project packages/web
+      - echo "Building Web Application..."
+      - echo "Running TypeScript compiler..."
+      - npx --prefix packages/web tsc
+      - echo "✓ TypeScript compilation completed"
       - echo "Running Vite build..."
-      - ./packages/web/node_modules/.bin/vite build
-      - echo "Build complete. Listing dist/..."
+      - npx --prefix packages/web vite build
+      - echo "✓ Vite build completed"
+      - echo "Verifying dist folder was created..."
+      - test -d packages/web/dist || (echo "❌ ERROR - dist/ folder not created" && exit 1)
+      - echo "✓ dist/ folder exists"
+      - echo "Listing dist contents..."
       - ls -la packages/web/dist/
+      - find packages/web/dist -type f | head -20
+      - echo "✓ Web build completed successfully"
 
   post_build:
     commands:
-      - echo "Web build completed on $(date)"
+      - echo "Post-build phase for Web..."
+      - echo "Build completed on $(date)"
 
 artifacts:
   files:
     - '**/*'
   base-directory: 'packages/web/dist'
-  name: web-build-artifact-$(date +%Y%m%d-%H%M%S)
+  name: web-build-artifact
 
 cache:
   paths:
