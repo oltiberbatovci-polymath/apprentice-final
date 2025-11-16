@@ -23,7 +23,7 @@ phases:
       - test -d packages/web || (echo "ERROR - packages/web/ NOT FOUND" && exit 1)
       - echo "✓ packages/web/ exists"
       - echo "Installing dependencies for Web..."
-      - npm install --prefix packages/web --legacy-peer-deps
+      - npm install --prefix packages/web --include=dev --legacy-peer-deps
       - echo "✓ Dependencies installed successfully"
       - echo "Verifying TypeScript installation..."
       - test -f packages/web/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "ERROR - tsc not found" && exit 1)

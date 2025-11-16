@@ -20,15 +20,15 @@ phases:
       - echo "Listing root directory contents..."
       - ls -la
       - echo "Checking for packages/api directory..."
-      - test -d packages/api || (echo "❌ ERROR - packages/api/ NOT FOUND" && exit 1)
+      - test -d packages/api || (echo "ERROR - packages/api/ NOT FOUND" && exit 1)
       - echo "✓ packages/api/ exists"
       - echo "Installing dependencies for API..."
-      - npm install --prefix packages/api --legacy-peer-deps
+      - npm install --prefix packages/api --include=dev --legacy-peer-deps
       - echo "✓ Dependencies installed successfully"
       - echo "Verifying TypeScript installation..."
-      - test -f packages/api/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "❌ ERROR - tsc not found" && exit 1)
+      - test -f packages/api/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "ERROR - tsc not found" && exit 1)
       - echo "Verifying Prisma installation..."
-      - test -f packages/api/node_modules/.bin/prisma && echo "✓ prisma found" || (echo "❌ ERROR - prisma not found" && exit 1)
+      - test -f packages/api/node_modules/.bin/prisma && echo "✓ prisma found" || (echo "ERROR - prisma not found" && exit 1)
       - echo "Generating Prisma client..."
       - npx --prefix packages/api prisma generate
       - echo "✓ Prisma client generated successfully"
@@ -40,7 +40,7 @@ phases:
       - npx --prefix packages/api tsc
       - echo "✓ TypeScript compilation completed"
       - echo "Verifying dist folder was created..."
-      - test -d packages/api/dist || (echo "❌ ERROR - dist/ folder not created" && exit 1)
+      - test -d packages/api/dist || (echo "ERROR - dist/ folder not created" && exit 1)
       - echo "✓ dist/ folder exists"
       - echo "Listing dist contents..."
       - ls -la packages/api/dist/
