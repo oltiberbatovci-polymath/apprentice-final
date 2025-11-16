@@ -16,7 +16,7 @@ phases:
   pre_build:
     commands:
       - echo "Verifying packages/web exists..."
-      - test -d packages/web || (echo "ERROR: packages/web not found" && exit 1)
+      - test -d packages/web 
       - ls -la packages/web/
       - echo "Installing dependencies..."
       - npm install --prefix packages/web --legacy-peer-deps
