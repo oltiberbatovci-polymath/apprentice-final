@@ -37,7 +37,7 @@ phases:
       - npx --prefix packages/web tsc -p packages/web/tsconfig.json
       - echo "✓ TypeScript compilation completed"
       - echo "Running Vite build..."
-      - npx --prefix packages/web vite build
+      - cd packages/web && npx vite build
       - echo "✓ Vite build completed"
       - echo "Verifying dist folder was created..."
       - test -d packages/web/dist || (echo "ERROR - dist/ folder not created" && exit 1)
