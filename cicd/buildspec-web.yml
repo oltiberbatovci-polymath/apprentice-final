@@ -14,12 +14,16 @@ phases:
       - echo "Starting Web Build Phase..."
       - echo "Build started on $(date)"
       - echo "Current directory - $(pwd)"
+      - echo "Listing root directory contents..."
       - ls -la
+      - echo "Checking for packages directory..."
+      - test -d packages && echo "packages/ exists" || echo "packages/ NOT FOUND"
+      - test -d packages/web && echo "packages/web/ exists" || echo "packages/web/ NOT FOUND"
+      - echo "Full directory tree (first 2 levels)..."
+      - find . -maxdepth 2 -type d
       - echo "Installing dependencies for Web..."
       - cd packages/web && npm install --legacy-peer-deps
       - echo "Dependencies installed successfully"
-      - echo "Checking installed tools..."
-      - cd packages/web && ls -la node_modules/.bin/ | grep -E "(tsc|vite)" || echo "Tools check complete"
       
   build:
     commands:

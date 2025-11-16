@@ -14,12 +14,16 @@ phases:
       - echo "Starting API Build Phase..."
       - echo "Build started on $(date)"
       - echo "Current directory - $(pwd)"
+      - echo "Listing root directory contents..."
       - ls -la
+      - echo "Checking for packages directory..."
+      - test -d packages && echo "packages/ exists" || echo "packages/ NOT FOUND"
+      - test -d packages/api && echo "packages/api/ exists" || echo "packages/api/ NOT FOUND"
+      - echo "Full directory tree (first 2 levels)..."
+      - find . -maxdepth 2 -type d
       - echo "Installing dependencies for API..."
       - cd packages/api && npm install --legacy-peer-deps
       - echo "Dependencies installed successfully"
-      - echo "Checking installed tools..."
-      - cd packages/api && ls -la node_modules/.bin/ | grep -E "(tsc|prisma)" || echo "Tools check complete"
       - echo "Generating Prisma client..."
       - cd packages/api && ./node_modules/.bin/prisma generate
       - echo "Prisma client generated successfully"
