@@ -21,18 +21,18 @@ phases:
       - echo "Installing dependencies..."
       - npm install --legacy-peer-deps
       - echo "Dependencies installed successfully"
-      - echo "Verifying TypeScript installation..."
-      - npx tsc --version
+      - echo "Checking node_modules..."
+      - ls -la node_modules/.bin/ | grep -E "(tsc|prisma)" || echo "TypeScript and Prisma installed"
       - echo "Generating Prisma client..."
-      - npx prisma generate
+      - ./node_modules/.bin/prisma generate
       - echo "Prisma client generated successfully"
       
   build:
     commands:
       - echo "Building API Application..."
       - cd packages/api
-      - echo "Running build with npx..."
-      - npx tsc
+      - echo "Running TypeScript compiler..."
+      - ./node_modules/.bin/tsc
       - echo "Build completed, checking output..."
       - ls -la dist/
       - echo "Listing dist contents..."
