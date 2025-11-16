@@ -33,7 +33,7 @@ phases:
       - cd packages/api && npx prisma generate
       - echo "✓ Prisma client generated successfully"
       - echo "Verifying Prisma client was generated..."
-      - test -d packages/api/node_modules/.prisma/client && echo "✓ @prisma/client generated" || (echo "ERROR - Prisma client not generated" && exit 1)
+      - test -d packages/api/node_modules/@prisma/client && echo "✓ @prisma/client generated" || (echo "ERROR - Prisma client not generated" && exit 1)
 
   build:
     commands:

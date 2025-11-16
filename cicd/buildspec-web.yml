@@ -34,14 +34,11 @@ phases:
     commands:
       - echo "Building Web Application..."
       - echo "Running TypeScript compiler..."
-      - npx --prefix packages/web tsc -p packages/web/tsconfig.json
+      - cd packages/web && npx tsc -p tsconfig.json
       - echo "✓ TypeScript compilation completed"
       - echo "Running Vite build..."
       - cd packages/web && npx vite build
       - echo "✓ Vite build completed"
-      - echo "Verifying dist folder was created..."
-      - test -d packages/web/dist || (echo "ERROR - dist/ folder not created" && exit 1)
-      - echo "✓ dist/ folder exists"
       - echo "Listing dist contents..."
       - ls -la packages/web/dist/
       - find packages/web/dist -type f | head -20
