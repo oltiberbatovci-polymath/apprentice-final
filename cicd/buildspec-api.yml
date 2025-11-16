@@ -1,56 +1,55 @@
 version: 0.2
 
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0  # Forces full clone
+
 phases:
   install:
     runtime-versions:
       nodejs: 20
     commands:
       - echo "Installing phase..."
-      - echo "Node version - $(node --version)"
-      - echo "NPM version - $(npm --version)"
-      
+      - echo "Node $(node --version), NPM $(npm --version)"
+      - echo "Forcing full git clone..."
+      - git fetch --unshallow || true
+      - git pull --unshallow || true
+      - echo "Initializing submodules (if any)..."
+      - git submodule update --init --recursive || true
+
   pre_build:
     commands:
-      - echo "Starting API Build Phase..."
-      - echo "Build started on $(date)"
-      - echo "Current directory - $(pwd)"
-      - echo "Listing root directory contents..."
+      - echo "Starting API Build..."
+      - echo "Workspace: $(pwd)"
       - ls -la
-      - echo "Checking for packages directory..."
-      - test -d packages && echo "packages/ exists" || echo "packages/ NOT FOUND"
-      - test -d packages/api && echo "packages/api/ exists" || echo "packages/api/ NOT FOUND"
-      - echo "Full directory tree (first 2 levels)..."
+      - echo "Verifying packages/api exists..."
+      - test -d packages/api && echo "packages/api FOUND" || (echo "packages/api MISSING" && exit 1)
       - find . -maxdepth 2 -type d
-      - echo "Installing dependencies for API..."
-      - cd packages/api && npm install --legacy-peer-deps
-      - echo "Dependencies installed successfully"
+
+      - echo "Installing API dependencies..."
+      - npm install --prefix packages/api --legacy-peer-deps
+
       - echo "Generating Prisma client..."
-      - cd packages/api && ./node_modules/.bin/prisma generate
-      - echo "Prisma client generated successfully"
-      
+      - ./packages/api/node_modules/.bin/prisma generate
+      - echo "Prisma client generated"
+
   build:
     commands:
-      - echo "Building API Application..."
-      - echo "Running TypeScript compiler..."
-      - cd packages/api && ./node_modules/.bin/tsc
-      - echo "Build completed, checking output..."
-      - cd packages/api && ls -la dist/
-      - echo "Listing dist contents..."
-      - cd packages/api && find dist -type f | head -20
-      - echo "API build completed successfully"
-      
+      - echo "Compiling TypeScript..."
+      - ./packages/api/node_modules/.bin/tsc --project packages/api
+      - echo "Build output:"
+      - ls -la packages/api/dist/
+
   post_build:
     commands:
-      - echo "Post-build phase for API..."
-      - echo "Build completed on $(date)"
+      - echo "API build completed on $(date)"
 
 artifacts:
   files:
     - '**/*'
   base-directory: 'packages/api/dist'
-  name: api-build-artifact
+  name: api-build-artifact-$(date +%Y%m%d-%H%M%S)
 
 cache:
   paths:
     - 'packages/api/node_modules/**/*'
-

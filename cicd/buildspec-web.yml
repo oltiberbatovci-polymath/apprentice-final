@@ -1,56 +1,43 @@
 version: 0.2
 
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+
 phases:
   install:
     runtime-versions:
       nodejs: 20
     commands:
-      - echo "Installing phase..."
-      - echo "Node version - $(node --version)"
-      - echo "NPM version - $(npm --version)"
-      
+      - echo "Node $(node --version), NPM $(npm --version)"
+      - git fetch --unshallow || true
+      - git submodule update --init --recursive || true
+
   pre_build:
     commands:
-      - echo "Starting Web Build Phase..."
-      - echo "Build started on $(date)"
-      - echo "Current directory - $(pwd)"
-      - echo "Listing root directory contents..."
-      - ls -la
-      - echo "Checking for packages directory..."
-      - test -d packages && echo "packages/ exists" || echo "packages/ NOT FOUND"
-      - test -d packages/web && echo "packages/web/ exists" || echo "packages/web/ NOT FOUND"
-      - echo "Full directory tree (first 2 levels)..."
-      - find . -maxdepth 2 -type d
-      - echo "Installing dependencies for Web..."
-      - cd packages/web && npm install --legacy-peer-deps
-      - echo "Dependencies installed successfully"
-      
+      - echo "Starting Web Build..."
+      - test -d packages/web && echo "packages/web FOUND" || (echo "MISSING" && exit 1)
+      - npm install --prefix packages/web --legacy-peer-deps
+
   build:
     commands:
-      - echo "Building Web Application..."
-      - echo "Running TypeScript compiler..."
-      - cd packages/web && ./node_modules/.bin/tsc
-      - echo "TypeScript compilation completed"
+      - echo "Compiling TS..."
+      - ./packages/web/node_modules/.bin/tsc --project packages/web
       - echo "Running Vite build..."
-      - cd packages/web && ./node_modules/.bin/vite build
-      - echo "Build completed, checking output..."
-      - cd packages/web && ls -la dist/
-      - echo "Listing dist contents..."
-      - cd packages/web && find dist -type f
-      - echo "Web build completed successfully"
-      
+      - ./packages/web/node_modules/.bin/vite build
+      - echo "Build output:"
+      - ls -la packages/web/dist/
+
   post_build:
     commands:
-      - echo "Post-build phase for Web..."
-      - echo "Build completed on $(date)"
+      - echo "Web build completed"
 
 artifacts:
   files:
     - '**/*'
   base-directory: 'packages/web/dist'
-  name: web-build-artifact
+  name: web-build-artifact-$(date +%Y%m%d-%H%M%S)
 
 cache:
   paths:
     - 'packages/web/node_modules/**/*'
-
