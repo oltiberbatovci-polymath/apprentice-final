@@ -9,28 +9,31 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - echo "Node $(node --version), NPM $(npm --version)"
+      - echo "Node $(node --version), npm $(npm --version)"
       - git fetch --unshallow || true
       - git submodule update --init --recursive || true
 
   pre_build:
     commands:
-      - echo "Starting Web Build..."
-      - test -d packages/web && echo "packages/web FOUND" || (echo "MISSING" && exit 1)
+      - echo "Verifying packages/web exists..."
+      - test -d packages/web || (echo "ERROR: packages/web not found" && exit 1)
+      - ls -la packages/web/
+      - echo "Installing dependencies..."
       - npm install --prefix packages/web --legacy-peer-deps
+      - echo "Dependencies installed"
 
   build:
     commands:
-      - echo "Compiling TS..."
+      - echo "Compiling TypeScript..."
       - ./packages/web/node_modules/.bin/tsc --project packages/web
       - echo "Running Vite build..."
       - ./packages/web/node_modules/.bin/vite build
-      - echo "Build output:"
+      - echo "Build complete. Listing dist/..."
       - ls -la packages/web/dist/
 
   post_build:
     commands:
-      - echo "Web build completed"
+      - echo "Web build completed on $(date)"
 
 artifacts:
   files:

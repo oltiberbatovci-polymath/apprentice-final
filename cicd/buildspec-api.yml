@@ -19,8 +19,8 @@ phases:
 
   pre_build:
     commands:
-      - echo "Starting API Build..."
-      - echo "Workspace: $(pwd)"
+      - echo "Installing deps..."
+      - npm install --prefix packages/web --legacy-peer-deps
       - ls -la
       - echo "Verifying packages/api exists..."
       - test -d packages/api && echo "packages/api FOUND" || (echo "packages/api MISSING" && exit 1)
