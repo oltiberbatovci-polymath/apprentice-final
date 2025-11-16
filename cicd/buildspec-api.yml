@@ -30,7 +30,7 @@ phases:
       - echo "Verifying Prisma installation..."
       - test -f packages/api/node_modules/.bin/prisma && echo "✓ prisma found" || (echo "ERROR - prisma not found" && exit 1)
       - echo "Generating Prisma client..."
-      - npx --prefix packages/api/prisma/schema.prisma generate
+      - npx --prefix packages/api prisma generate
       - echo "✓ Prisma client generated successfully"
       - echo "Verifying Prisma client was generated..."
       - test -d packages/api/node_modules/.prisma/client && echo "✓ @prisma/client generated" || (echo "ERROR - Prisma client not generated" && exit 1)

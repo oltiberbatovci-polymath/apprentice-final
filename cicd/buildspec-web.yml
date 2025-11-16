@@ -34,7 +34,7 @@ phases:
     commands:
       - echo "Building Web Application..."
       - echo "Running TypeScript compiler..."
-      - npx --prefix packages/web tsc
+      - npx --prefix packages/web tsc -p packages/web/tsconfig.json
       - echo "✓ TypeScript compilation completed"
       - echo "Running Vite build..."
       - npx --prefix packages/web vite build
