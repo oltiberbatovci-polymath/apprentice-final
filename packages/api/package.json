@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Event Planner API",
   "main": "dist/index.js",
+  "prisma": {
+    "schema": "./prisma/schema.prisma"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
