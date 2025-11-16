@@ -36,10 +36,10 @@ phases:
       - test -d packages/api/node_modules/.prisma/client && echo "✓ @prisma/client generated" || (echo "ERROR - Prisma client not generated" && exit 1)
 
   build:
-    commands:
+  commands:
       - echo "Building API Application..."
       - echo "Running TypeScript compiler..."
-      - npx --prefix packages/api tsc
+      - npx --prefix packages/api tsc -p packages/api/tsconfig.json
       - echo "✓ TypeScript compilation completed"
       - echo "Verifying dist folder was created..."
       - test -d packages/api/dist || (echo "ERROR - dist/ folder not created" && exit 1)
