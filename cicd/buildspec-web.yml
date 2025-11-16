@@ -15,28 +15,24 @@ phases:
       - echo "Build started on $(date)"
       - echo "Current directory - $(pwd)"
       - ls -la
-      - echo "Navigating to packages/web..."
-      - cd packages/web
-      - pwd
-      - echo "Installing dependencies..."
-      - npm install --legacy-peer-deps
+      - echo "Installing dependencies for Web..."
+      - cd packages/web && npm install --legacy-peer-deps
       - echo "Dependencies installed successfully"
-      - echo "Checking node_modules..."
-      - ls -la node_modules/.bin/ | grep -E "(tsc|vite)" || echo "TypeScript and Vite installed"
+      - echo "Checking installed tools..."
+      - cd packages/web && ls -la node_modules/.bin/ | grep -E "(tsc|vite)" || echo "Tools check complete"
       
   build:
     commands:
       - echo "Building Web Application..."
-      - cd packages/web
       - echo "Running TypeScript compiler..."
-      - ./node_modules/.bin/tsc
+      - cd packages/web && ./node_modules/.bin/tsc
       - echo "TypeScript compilation completed"
       - echo "Running Vite build..."
-      - ./node_modules/.bin/vite build
+      - cd packages/web && ./node_modules/.bin/vite build
       - echo "Build completed, checking output..."
-      - ls -la dist/
+      - cd packages/web && ls -la dist/
       - echo "Listing dist contents..."
-      - find dist -type f
+      - cd packages/web && find dist -type f
       - echo "Web build completed successfully"
       
   post_build:
