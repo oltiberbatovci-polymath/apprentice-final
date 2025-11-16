@@ -20,15 +20,15 @@ phases:
       - echo "Listing root directory contents..."
       - ls -la
       - echo "Checking for packages/web directory..."
-      - test -d packages/web || (echo "❌ ERROR - packages/web/ NOT FOUND" && exit 1)
+      - test -d packages/web || (echo "ERROR - packages/web/ NOT FOUND" && exit 1)
       - echo "✓ packages/web/ exists"
       - echo "Installing dependencies for Web..."
       - npm install --prefix packages/web --legacy-peer-deps
       - echo "✓ Dependencies installed successfully"
       - echo "Verifying TypeScript installation..."
-      - test -f packages/web/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "❌ ERROR - tsc not found" && exit 1)
+      - test -f packages/web/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "ERROR - tsc not found" && exit 1)
       - echo "Verifying Vite installation..."
-      - test -f packages/web/node_modules/.bin/vite && echo "✓ vite found" || (echo "❌ ERROR - vite not found" && exit 1)
+      - test -f packages/web/node_modules/.bin/vite && echo "✓ vite found" || (echo "ERROR - vite not found" && exit 1)
 
   build:
     commands:
@@ -40,7 +40,7 @@ phases:
       - npx --prefix packages/web vite build
       - echo "✓ Vite build completed"
       - echo "Verifying dist folder was created..."
-      - test -d packages/web/dist || (echo "❌ ERROR - dist/ folder not created" && exit 1)
+      - test -d packages/web/dist || (echo "ERROR - dist/ folder not created" && exit 1)
       - echo "✓ dist/ folder exists"
       - echo "Listing dist contents..."
       - ls -la packages/web/dist/
