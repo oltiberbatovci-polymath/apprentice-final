@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    GIT_CLONE_DEPTH: 0
+    GIT_CLONE_DEPTH: 0   # Full clone
 
 phases:
   install:
@@ -21,33 +21,33 @@ phases:
       - ls -la
       - echo "Checking for packages/api directory..."
       - test -d packages/api || (echo "ERROR - packages/api/ NOT FOUND" && exit 1)
-      - echo "✓ packages/api/ exists"
+      - echo "packages/api/ exists"
       - echo "Installing dependencies for API..."
       - npm install --prefix packages/api --include=dev --legacy-peer-deps
-      - echo "✓ Dependencies installed successfully"
+      - echo "Dependencies installed successfully"
       - echo "Verifying TypeScript installation..."
-      - test -f packages/api/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "ERROR - tsc not found" && exit 1)
+      - test -f packages/api/node_modules/.bin/tsc && echo "tsc found" || (echo "ERROR - tsc not found" && exit 1)
       - echo "Verifying Prisma installation..."
-      - test -f packages/api/node_modules/.bin/prisma && echo "✓ prisma found" || (echo "ERROR - prisma not found" && exit 1)
+      - test -f packages/api/node_modules/.bin/prisma && echo "prisma found" || (echo "ERROR - prisma not found" && exit 1)
       - echo "Generating Prisma client..."
-      - npx --prefix packages/api/prisma/schema.prisma
-      - echo "✓ Prisma client generated successfully"
+      - npx --prefix packages/api prisma generate
+      - echo "Prisma client generated successfully"
       - echo "Verifying Prisma client was generated..."
-      - test -d packages/api/node_modules/.prisma/client && echo "✓ @prisma/client generated" || (echo "ERROR - Prisma client not generated" && exit 1)
+      - test -d packages/api/node_modules/.prisma/client && echo "@prisma/client generated" || (echo "ERROR - Prisma client not generated" && exit 1)
 
   build:
     commands:
       - echo "Building API Application..."
-      - echo "Running TypeScript compiler..."
-      - npx --prefix packages/api tsc
-      - echo "✓ TypeScript compilation completed"
+      - echo "Running npm run build (uses tsconfig.json)..."
+      - npm run build --prefix packages/api
+      - echo "TypeScript compilation completed"
       - echo "Verifying dist folder was created..."
       - test -d packages/api/dist || (echo "ERROR - dist/ folder not created" && exit 1)
-      - echo "✓ dist/ folder exists"
+      - echo "dist/ folder exists"
       - echo "Listing dist contents..."
       - ls -la packages/api/dist/
       - find packages/api/dist -type f | head -20
-      - echo "✓ API build completed successfully"
+      - echo "API build completed successfully"
 
   post_build:
     commands:
