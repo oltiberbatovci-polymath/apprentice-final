@@ -55,7 +55,7 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: 'packages/api/node_modules'
+  base-directory: 'packages/api/dist'
   name: api-build-artifact
 
 cache:
