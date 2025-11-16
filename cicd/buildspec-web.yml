@@ -1,27 +1,39 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing phase..."
+      - echo "Node version - $(node --version)"
+      - echo "NPM version - $(npm --version)"
+      
   pre_build:
     commands:
       - echo "Starting Web Build Phase..."
       - echo "Build started on $(date)"
       - echo "Current directory - $(pwd)"
-      - echo "Checking Node version..."
-      - node --version
-      - npm --version
+      - ls -la
+      - echo "Navigating to packages/web..."
+      - cd packages/web
+      - pwd
+      - echo "Installing dependencies..."
+      - npm install --legacy-peer-deps
+      - echo "Dependencies installed successfully"
+      - echo "Verifying TypeScript installation..."
+      - npx tsc --version
       
   build:
     commands:
       - echo "Building Web Application..."
       - cd packages/web
-      - echo "Installing dependencies..."
-      - npm install --legacy-peer-deps
-      - echo "Dependencies installed, verifying..."
-      - ls -la node_modules/.bin/ | head -20
-      - echo "Running build..."
-      - npm run build
+      - echo "Running build with npx..."
+      - npx tsc && npx vite build
       - echo "Build completed, checking output..."
       - ls -la dist/
+      - echo "Listing dist contents..."
+      - find dist -type f
       - echo "Web build completed successfully"
       
   post_build:
