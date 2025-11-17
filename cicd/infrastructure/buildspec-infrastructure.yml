@@ -15,7 +15,6 @@ phases:
       - terraform fmt -check -recursive
       - echo "Terraform format check completed"
       - echo "Running terraform init..."
-      - cd pipelines
       - terraform init -backend=false
       - echo "Running terraform validate..."
       - terraform validate
