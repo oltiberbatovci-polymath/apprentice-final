@@ -37,7 +37,7 @@ phases:
     commands:
       - echo "Building API Application..."
       - echo "Running TypeScript compiler..."
-      - npx --prefix packages/api tsc -p packages/api/tsconfig.json
+      - npx tsc -p tsconfig.json
       - echo "✓ TypeScript compilation completed"
       - echo "Verifying dist folder was created..."
       - test -d packages/api/dist || (echo "ERROR - dist/ folder not created" && exit 1)
