@@ -60,16 +60,16 @@ module "backend" {
 module "network" {
   source = "./modules/network"
 
-  project_name           = var.project_name
-  environment            = var.environment
-  vpc_cidr               = var.vpc_cidr
-  availability_zones     = var.availability_zones
-  public_subnet_cidrs     = var.public_subnet_cidrs
-  private_subnet_cidrs    = var.private_subnet_cidrs
-  database_subnet_cidrs   = var.database_subnet_cidrs
-  enable_nat_gateway      = true
-  enable_flow_logs        = false
-  tags                    = local.common_tags
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_cidr              = var.vpc_cidr
+  availability_zones    = var.availability_zones
+  public_subnet_cidrs   = var.public_subnet_cidrs
+  private_subnet_cidrs  = var.private_subnet_cidrs
+  database_subnet_cidrs = var.database_subnet_cidrs
+  enable_nat_gateway    = true
+  enable_flow_logs      = false
+  tags                  = local.common_tags
 }
 
 # IAM Module - ECS Roles and Policies
@@ -86,31 +86,31 @@ module "iam" {
   secrets_manager_arns = []
   ssm_parameter_arns   = []
   enable_rds_access    = false
-  enable_lambda_role    = false
+  enable_lambda_role   = false
 }
 
 # Compute Module - ECS Cluster, Services, ALB (must be created before data module)
 module "compute" {
   source = "./modules/compute"
 
-  project_name          = var.project_name
-  environment           = var.environment
-  aws_region            = local.aws_region
-  vpc_id                = module.network.vpc_id
-  public_subnet_ids     = module.network.public_subnet_ids
-  private_subnet_ids    = module.network.private_subnet_ids
+  project_name                = var.project_name
+  environment                 = var.environment
+  aws_region                  = local.aws_region
+  vpc_id                      = module.network.vpc_id
+  public_subnet_ids           = module.network.public_subnet_ids
+  private_subnet_ids          = module.network.private_subnet_ids
   ecs_task_execution_role_arn = module.iam.ecs_task_execution_role_arn
-  ecs_task_role_arn    = module.iam.ecs_task_role_arn
-  alb_certificate_arn   = var.alb_certificate_arn
+  ecs_task_role_arn           = module.iam.ecs_task_role_arn
+  alb_certificate_arn         = var.alb_certificate_arn
 
   # API Configuration
   api_port              = var.api_port
   api_cpu               = var.api_cpu
-  api_memory             = var.api_memory
+  api_memory            = var.api_memory
   api_desired_count     = var.api_desired_count
   api_min_capacity      = var.api_min_capacity
   api_max_capacity      = var.api_max_capacity
-  api_health_check_path  = var.api_health_check_path
+  api_health_check_path = var.api_health_check_path
 
   # Web Configuration
   web_port              = var.web_port
@@ -119,10 +119,10 @@ module "compute" {
   web_desired_count     = var.web_desired_count
   web_min_capacity      = var.web_min_capacity
   web_max_capacity      = var.web_max_capacity
-  web_health_check_path  = var.web_health_check_path
+  web_health_check_path = var.web_health_check_path
 
   enable_container_insights = true
-  log_retention_days       = 7
+  log_retention_days        = 7
 
   tags = local.common_tags
 
@@ -133,12 +133,12 @@ module "compute" {
 module "data" {
   source = "./modules/data"
 
-  project_name                 = var.project_name
-  environment                  = var.environment
-  vpc_id                       = module.network.vpc_id
-  database_subnet_group_name   = module.network.database_subnet_group_name
+  project_name                  = var.project_name
+  environment                   = var.environment
+  vpc_id                        = module.network.vpc_id
+  database_subnet_group_name    = module.network.database_subnet_group_name
   elasticache_subnet_group_name = module.network.elasticache_subnet_group_name
-  ecs_security_group_ids       = [module.compute.ecs_security_group_id]
+  ecs_security_group_ids        = [module.compute.ecs_security_group_id]
 
   # RDS Configuration
   rds_engine         = var.rds_engine
@@ -150,10 +150,10 @@ module "data" {
   rds_multi_az       = var.rds_multi_az
 
   # Elasticache Configuration
-  elasticache_node_type       = var.elasticache_node_type
-  elasticache_num_cache_nodes  = var.elasticache_num_cache_nodes
+  elasticache_node_type          = var.elasticache_node_type
+  elasticache_num_cache_nodes    = var.elasticache_num_cache_nodes
   elasticache_automatic_failover = var.environment == "production"
-  elasticache_multi_az        = var.environment == "production"
+  elasticache_multi_az           = var.environment == "production"
 
   tags = local.common_tags
 }
@@ -166,16 +166,16 @@ module "edge" {
     aws.us_east_1 = aws.us_east_1
   }
 
-  project_name           = var.project_name
-  environment            = var.environment
-  alb_dns_name           = module.compute.alb_dns_name
-  enable_https           = var.enable_https
-  domain_name            = var.domain_name
+  project_name              = var.project_name
+  environment               = var.environment
+  alb_dns_name              = module.compute.alb_dns_name
+  enable_https              = var.enable_https
+  domain_name               = var.domain_name
   subject_alternative_names = var.subject_alternative_names
-  hosted_zone_id         = var.hosted_zone_id
-  create_hosted_zone     = var.create_hosted_zone
-  cloudfront_price_class = var.cloudfront_price_class
-  waf_rate_limit         = var.waf_rate_limit
+  hosted_zone_id            = var.hosted_zone_id
+  create_hosted_zone        = var.create_hosted_zone
+  cloudfront_price_class    = var.cloudfront_price_class
+  waf_rate_limit            = var.waf_rate_limit
 
   tags = local.common_tags
 
@@ -186,25 +186,25 @@ module "edge" {
 module "observability" {
   source = "./modules/observability"
 
-  project_name                    = var.project_name
-  environment                     = var.environment
-  aws_region                      = local.aws_region
-  alb_arn_suffix                  = module.compute.alb_arn
-  ecs_cluster_name                = module.compute.ecs_cluster_name
-  ecs_service_name                = module.compute.api_service_name
-  rds_instance_id                 = module.data.rds_instance_id
+  project_name                     = var.project_name
+  environment                      = var.environment
+  aws_region                       = local.aws_region
+  alb_arn_suffix                   = module.compute.alb_arn
+  ecs_cluster_name                 = module.compute.ecs_cluster_name
+  ecs_service_name                 = module.compute.api_service_name
+  rds_instance_id                  = module.data.rds_instance_id
   elasticache_replication_group_id = module.data.elasticache_replication_group_id
-  log_group_name                  = "/aws/ecs/${var.project_name}-api-${var.environment}"
-  alert_email_addresses           = var.alert_email_addresses
+  log_group_name                   = "/aws/ecs/${var.project_name}-api-${var.environment}"
+  alert_email_addresses            = var.alert_email_addresses
 
-  high_5xx_threshold              = var.high_5xx_threshold
-  high_latency_threshold          = var.high_latency_threshold
-  high_cpu_threshold              = var.high_cpu_threshold
-  rds_high_connections_threshold  = var.rds_high_connections_threshold
+  high_5xx_threshold                = var.high_5xx_threshold
+  high_latency_threshold            = var.high_latency_threshold
+  high_cpu_threshold                = var.high_cpu_threshold
+  rds_high_connections_threshold    = var.rds_high_connections_threshold
   elasticache_high_memory_threshold = var.elasticache_high_memory_threshold
-  error_rate_threshold            = var.error_rate_threshold
+  error_rate_threshold              = var.error_rate_threshold
 
-  enable_rds_alarms      = true
+  enable_rds_alarms         = true
   enable_elasticache_alarms = true
 
   tags = local.common_tags

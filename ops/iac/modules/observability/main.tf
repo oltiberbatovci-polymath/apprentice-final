@@ -139,7 +139,7 @@ resource "aws_cloudwatch_metric_alarm" "high_5xx_errors" {
   statistic           = "Sum"
   threshold           = var.high_5xx_threshold
   alarm_description   = "This metric monitors high 5xx error rate"
-  treat_missing_data = "notBreaching"
+  treat_missing_data  = "notBreaching"
 
   dimensions = {
     LoadBalancer = var.alb_arn_suffix
@@ -273,9 +273,9 @@ resource "aws_cloudwatch_log_metric_filter" "error_rate" {
   pattern        = "[timestamp, level=ERROR, ...]"
 
   metric_transformation {
-    name      = "ErrorCount"
-    namespace = "${var.project_name}/${var.environment}"
-    value     = "1"
+    name          = "ErrorCount"
+    namespace     = "${var.project_name}/${var.environment}"
+    value         = "1"
     default_value = 0
   }
 }
