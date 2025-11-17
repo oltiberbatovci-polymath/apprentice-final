@@ -16,35 +16,33 @@ phases:
     commands:
       - echo "Starting API Build Phase..."
       - echo "Build started on $(date)"
-      - echo "Current directory - $(pwd)"
-      - echo "Listing root directory contents..."
-      - ls -la
-      - echo "Checking for packages/api directory..."
-      - test -d packages/api || (echo "ERROR - packages/api/ NOT FOUND" && exit 1)
-      - echo "✓ packages/api/ exists"
+      - echo "Current directory: $(pwd)"
       - echo "Installing dependencies for API..."
-      - npm install --prefix packages/api --include=dev --legacy-peer-deps
-      - echo "✓ Dependencies installed successfully"
+      - cd packages/api
+      - npm install --include=dev --legacy-peer-deps
+      - echo "✓ Dependencies installed"
       - echo "Verifying TypeScript installation..."
-      - test -f packages/api/node_modules/.bin/tsc && echo "✓ tsc found" || (echo "ERROR - tsc not found" && exit 1)
+      - test -f node_modules/.bin/tsc && echo "✓ tsc found" || (echo "ERROR - tsc not found" && exit 1)
       - echo "Verifying Prisma installation..."
-      - test -f packages/api/node_modules/.bin/prisma && echo "✓ prisma found" || (echo "ERROR - prisma not found" && exit 1)
+      - test -f node_modules/.bin/prisma && echo "✓ prisma found" || (echo "ERROR - prisma not found" && exit 1)
       - echo "Generating Prisma client..."
-      - cd packages/api && npx prisma generate
-      - echo "✓ Prisma client generated successfully"
+      - npx prisma generate
+      - echo "✓ Prisma client generated"
 
   build:
     commands:
       - echo "Building API Application..."
-      - cd packages/api
+      - echo "Current directory: $(pwd)"
       - echo "Running TypeScript compiler..."
-      - npx tsc -p tsconfig.json
+      - npx tsc
       - echo "✓ TypeScript compilation completed"
       - echo "Verifying dist folder was created..."
-      - test -d dist || (echo "ERROR - dist/ folder not created" && exit 1)
+      - pwd
+      - ls -la
+      - test -d dist || (echo "ERROR - dist/ folder not created in $(pwd)" && exit 1)
       - echo "✓ dist/ folder exists"
       - echo "Listing dist contents..."
-      - ls -la dist
+      - ls -la dist/
       - find dist -type f | head -20
       - echo "✓ API build completed successfully"
 
