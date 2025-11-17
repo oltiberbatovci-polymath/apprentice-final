@@ -15,8 +15,6 @@ phases:
   pre_build:
     commands:
       - echo "Starting API Build Phase..."
-      - echo "Build started on $(date)"
-      - echo "Current directory: $(pwd)"
       - echo "Installing dependencies for API..."
       - cd packages/api
       - npm install --include=dev --legacy-peer-deps
@@ -32,14 +30,13 @@ phases:
   build:
     commands:
       - echo "Building API Application..."
-      - echo "Current directory: $(pwd)"
       - echo "Running TypeScript compiler..."
       - npx tsc
       - echo "TypeScript compilation completed"
       - echo "Verifying dist folder was created..."
       - pwd
       - ls -la
-      - test -d dist || (echo "ERROR - dist/ folder not created in $(pwd)" && exit 1)
+      - test -d dist || (echo "ERROR - dist/ folder not created" && exit 1)
       - echo "dist/ folder exists"
       - echo "Listing dist contents..."
       - ls -la dist/
@@ -49,7 +46,7 @@ phases:
   post_build:
     commands:
       - echo "Post-build phase for API..."
-      - echo "Build completed on $(date)"
+      - echo "Build completed"
 
 artifacts:
   files:
