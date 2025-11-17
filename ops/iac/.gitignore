@@ -14,3 +14,10 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
