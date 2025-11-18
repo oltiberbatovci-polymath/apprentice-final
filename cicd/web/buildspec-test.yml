@@ -22,14 +22,14 @@ phases:
   build:
     commands:
       - echo "Testing Web frontend endpoint..."
-      - WEB_URL=${ALB_DNS_NAME}
-      - echo "Web URL: $WEB_URL"
-      - MAX_RETRIES=10
-      - RETRY_COUNT=0
-      - while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+      - export WEB_URL=${ALB_DNS_NAME}
+      - echo "Web URL - $WEB_URL"
+      - export MAX_RETRIES=10
+        export RETRY_COUNT=0
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
           echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $WEB_URL || echo "000")
-          echo "HTTP Status Code: $HTTP_CODE"
+          echo "HTTP Status Code - $HTTP_CODE"
           
           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
             echo "✓ Web frontend is accessible!"
