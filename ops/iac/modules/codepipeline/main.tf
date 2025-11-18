@@ -501,7 +501,7 @@ resource "aws_codepipeline" "pipeline" {
         owner            = "AWS"
         provider         = "CodeBuild"
         version          = "1"
-        input_artifacts  = ["build_output"]
+        input_artifacts  = ["source_output"]
         output_artifacts = ["deploy_output"]
 
         configuration = {
@@ -523,7 +523,7 @@ resource "aws_codepipeline" "pipeline" {
         owner           = "AWS"
         provider        = "CodeBuild"
         version         = "1"
-        input_artifacts = var.deploy_buildspec_path != "" ? ["deploy_output"] : ["build_output"]
+        input_artifacts = ["source_output"]
 
         configuration = {
           ProjectName = aws_codebuild_project.test_project[0].name
@@ -544,7 +544,7 @@ resource "aws_codepipeline" "pipeline" {
         owner           = "AWS"
         provider        = "CodeBuild"
         version         = "1"
-        input_artifacts = var.enable_approval_stage ? ["build_output"] : ["build_output"]
+        input_artifacts = ["source_output"]
 
         configuration = {
           ProjectName = aws_codebuild_project.apply_project[0].name
