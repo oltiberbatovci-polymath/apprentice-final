@@ -5,7 +5,7 @@ phases:
     commands:
       - echo "Installing AWS CLI..."
       - apk add --no-cache python3 py3-pip
-      - pip3 install --upgrade awscli
+      - pip3 install --upgrade --break-system-packages awscli
       - aws --version
       
   pre_build:
@@ -20,13 +20,11 @@ phases:
   build:
     commands:
       - echo "Initializing Terraform with backend..."
-      - |
-        echo "Current directory: $(pwd)"
+      - echo "Current directory: $(pwd)"
       - echo "Listing contents:"
       - ls -la
       - echo "Checking for ops/iac directory..."
-      - |
-        if [ ! -d ops/iac ]; then
+      - if [ ! -d ops/iac ]; then
           echo "ERROR: ops/iac not found"
           ls -la
           exit 1
@@ -34,8 +32,7 @@ phases:
           echo "ops/iac exists"
         fi
       - cd ops/iac
-      - |
-        echo "In ops/iac directory: $(pwd)"
+      - echo "In ops/iac directory: $(pwd)"
       - terraform init
       - echo "Running terraform plan..."
       - terraform plan -out=tfplan
@@ -49,8 +46,7 @@ phases:
       - echo "Post-apply phase for Infrastructure..."
       - echo "Deployment completed on $(date)"
       - echo "Getting Terraform outputs..."
-      - |
-        terraform output -json || echo "No outputs available"
+      - terraform output -json || echo "No outputs available"
 
 artifacts:
   files:
