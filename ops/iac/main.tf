@@ -319,12 +319,12 @@ module "infrastructure_pipeline" {
   privileged_mode    = true
 
   environment_variables = {
-    ENVIRONMENT            = var.environment
-    TF_VERSION             = "1.6.0"
-    TF_IN_AUTOMATION       = "true"
-    TF_VAR_owner            = var.owner
+    ENVIRONMENT                    = var.environment
+    TF_VERSION                     = "1.6.0"
+    TF_IN_AUTOMATION               = "true"
+    TF_VAR_owner                   = var.owner
     TF_VAR_codestar_connection_arn = var.codestar_connection_arn
-    TF_VAR_repository_id   = var.repository_id
+    TF_VAR_repository_id           = var.repository_id
   }
 
   log_retention_days   = 7
