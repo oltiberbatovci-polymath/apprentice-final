@@ -42,17 +42,10 @@ phases:
       - docker push $ECR_REPOSITORY:latest
       - echo "Image pushed to ECR successfully"
       - echo "Updating ECS service..."
-      - aws ecs update-service \
-          --cluster ${ECS_CLUSTER_NAME} \
-          --service ${ECS_SERVICE_NAME} \
-          --force-new-deployment \
-          --region ${AWS_REGION}
+      - aws ecs update-service --cluster ${ECS_CLUSTER_NAME} --service ${ECS_SERVICE_NAME} --force-new-deployment --region ${AWS_REGION}
       - echo "ECS service update initiated"
       - echo "Waiting for service to stabilize..."
-      - aws ecs wait services-stable \
-          --cluster ${ECS_CLUSTER_NAME} \
-          --services ${ECS_SERVICE_NAME} \
-          --region ${AWS_REGION}
+      - aws ecs wait services-stable --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION}
       - echo "ECS service deployment completed successfully"
 
   post_build:
