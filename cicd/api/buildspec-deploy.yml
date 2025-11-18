@@ -21,21 +21,19 @@ phases:
       - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
   pre_build:
-    commands:
-      - echo "Starting API Deploy Phase..."
-      - |
-        echo "Deploy started on $(date)"
-      - echo "Setting variables..."
-      - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
-      - |
-        export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
-      - echo "ECR Repository: $ECR_REPOSITORY"
-      - echo "Image Tag: $IMAGE_TAG"
-      - echo "Building Docker image..."
-      - cd packages/api
-      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:latest
-      - echo "Docker image built successfully"
+  commands:
+    - echo "Starting API Deploy Phase..."
+    - echo "Deploy started on $(date)"
+    - echo "Setting variables..."
+    - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
+    - export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
+    - echo "ECR Repository: $ECR_REPOSITORY"
+    - echo "Image Tag: $IMAGE_TAG"
+    - echo "Building Docker image..."
+    - cd packages/api
+    - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+    - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:latest
+    - echo "Docker image built successfully"
 
   build:
     commands:
@@ -50,11 +48,10 @@ phases:
       - echo "ECS service deployment completed successfully"
 
   post_build:
-    commands:
-      - echo "Post-deploy phase for API..."
-      - |
-        echo "Deployment completed on $(date)"
-      - echo "Image: $ECR_REPOSITORY:$IMAGE_TAG"
+  commands:
+    - echo "Post-deploy phase for API..."
+    - echo "Deployment completed on $(date)"
+    - echo "Image: $ECR_REPOSITORY:$IMAGE_TAG"
 
 artifacts:
   files:
