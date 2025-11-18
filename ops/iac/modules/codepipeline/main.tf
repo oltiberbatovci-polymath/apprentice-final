@@ -168,14 +168,11 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition"
+          "ecs:RegisterTaskDefinition",
+          "ecs:ListServices",
+          "ecs:ListTasks"
         ]
         Resource = "*"
-        Condition = {
-          StringEqualsIfExists = {
-            "ecs:cluster" = var.ecs_cluster_name != "" ? var.ecs_cluster_name : "*"
-          }
-        }
       },
       {
         Effect = "Allow"
