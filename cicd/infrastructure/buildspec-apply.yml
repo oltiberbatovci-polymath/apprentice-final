@@ -31,7 +31,7 @@ phases:
         echo "In ops/iac directory: $(pwd)"
       - terraform init
       - echo "Running terraform plan..."
-      - terraform plan -out=tfplan
+      - terraform plan -var="owner=${TF_VAR_owner}" -var="codestar_connection_arn=${TF_VAR_codestar_connection_arn}" -var="repository_id=${TF_VAR_repository_id}" -out=tfplan
       - echo "Terraform plan completed"
       - echo "Applying Terraform configuration..."
       - terraform apply -auto-approve tfplan
