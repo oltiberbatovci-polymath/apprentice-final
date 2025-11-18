@@ -13,11 +13,18 @@ phases:
   build:
     commands:
       - echo "Initializing Terraform with backend..."
-      - echo "Current directory: $(pwd)"
+      - |
+        echo "Current directory: $(pwd)"
       - echo "Listing contents:"
       - ls -la
       - echo "Checking for ops/iac directory..."
-      - test -d ops/iac && echo "ops/iac exists" || (echo "ERROR: ops/iac not found" && ls -la && exit 1)
+      - if [ ! -d ops/iac ]; then
+          echo "ERROR: ops/iac not found"
+          ls -la
+          exit 1
+        else
+          echo "ops/iac exists"
+        fi
       - cd ops/iac
       - echo "In ops/iac directory: $(pwd)"
       - terraform init
@@ -33,7 +40,8 @@ phases:
       - echo "Post-apply phase for Infrastructure..."
       - echo "Deployment completed on $(date)"
       - echo "Getting Terraform outputs..."
-      - terraform output -json || echo "No outputs available"
+      - |
+        terraform output -json || echo "No outputs available"
 
 artifacts:
   files:
