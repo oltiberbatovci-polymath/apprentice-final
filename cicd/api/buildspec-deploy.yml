@@ -48,10 +48,10 @@ phases:
       - echo "ECS service deployment completed successfully"
 
   post_build:
-  commands:
-    - echo "Post-deploy phase for API..."
-    - echo "Deployment completed on $(date)"
-    - echo "Image: $ECR_REPOSITORY:$IMAGE_TAG"
+    commands:
+      - echo "Post-deploy phase for API..."
+      - echo "Deployment completed on $(date)"
+      - echo "Image: $ECR_REPOSITORY:$IMAGE_TAG"
 
 artifacts:
   files:
