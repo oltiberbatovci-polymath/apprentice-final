@@ -225,11 +225,20 @@ module "web_pipeline" {
   repository_id           = var.repository_id
   branch_name             = var.branch_name
   buildspec_path          = "cicd/web/buildspec-web.yml"
+  deploy_buildspec_path   = "cicd/web/buildspec-deploy.yml"
+  test_buildspec_path     = "cicd/web/buildspec-test.yml"
 
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "aws/codebuild/standard:7.0"
   build_timeout      = 30
   privileged_mode    = true
+
+  # ECR and ECS configuration for deployment
+  ecr_repository_uri = module.compute.ecr_web_repository_url
+  ecs_cluster_name   = module.compute.ecs_cluster_name
+  ecs_service_name   = module.compute.web_service_name
+  alb_dns_name       = module.compute.alb_dns_name
+  vite_api_url       = "http://${module.compute.alb_dns_name}/api"
 
   environment_variables = {
     ENVIRONMENT = var.environment
@@ -240,6 +249,8 @@ module "web_pipeline" {
   enable_notifications = true
 
   tags = local.common_tags
+
+  depends_on = [module.compute]
 }
 
 
@@ -255,11 +266,19 @@ module "api_pipeline" {
   repository_id           = var.repository_id
   branch_name             = var.branch_name
   buildspec_path          = "cicd/api/buildspec-api.yml"
+  deploy_buildspec_path   = "cicd/api/buildspec-deploy.yml"
+  test_buildspec_path     = "cicd/api/buildspec-test.yml"
 
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "aws/codebuild/standard:7.0"
   build_timeout      = 30
   privileged_mode    = true
+
+  # ECR and ECS configuration for deployment
+  ecr_repository_uri = module.compute.ecr_api_repository_url
+  ecs_cluster_name   = module.compute.ecs_cluster_name
+  ecs_service_name   = module.compute.api_service_name
+  alb_dns_name       = module.compute.alb_dns_name
 
   environment_variables = {
     ENVIRONMENT = var.environment
@@ -270,6 +289,8 @@ module "api_pipeline" {
   enable_notifications = true
 
   tags = local.common_tags
+
+  depends_on = [module.compute]
 }
 
 # Infrastructure Pipeline
@@ -284,6 +305,9 @@ module "infrastructure_pipeline" {
   repository_id           = var.repository_id
   branch_name             = var.branch_name
   buildspec_path          = "cicd/infrastructure/buildspec-infrastructure.yml"
+  apply_buildspec_path    = "cicd/infrastructure/buildspec-apply.yml"
+  enable_approval_stage    = true
+  approval_stage_name     = "Approval"
 
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "hashicorp/terraform:1.6"

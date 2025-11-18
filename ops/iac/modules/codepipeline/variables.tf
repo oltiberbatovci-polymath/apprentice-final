@@ -44,8 +44,68 @@ variable "detect_changes" {
 }
 
 variable "buildspec_path" {
-  description = "Path to the buildspec file"
+  description = "Path to the buildspec file for Build stage"
   type        = string
+}
+
+variable "deploy_buildspec_path" {
+  description = "Path to the buildspec file for Deploy stage (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "test_buildspec_path" {
+  description = "Path to the buildspec file for Test stage (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "apply_buildspec_path" {
+  description = "Path to the buildspec file for Apply stage (optional, for infrastructure)"
+  type        = string
+  default     = ""
+}
+
+variable "enable_approval_stage" {
+  description = "Enable manual approval stage (for infrastructure pipeline)"
+  type        = bool
+  default     = false
+}
+
+variable "approval_stage_name" {
+  description = "Name for the approval stage"
+  type        = string
+  default     = "Approval"
+}
+
+variable "ecr_repository_uri" {
+  description = "ECR repository URI for deployment (for API/Web pipelines)"
+  type        = string
+  default     = ""
+}
+
+variable "ecs_cluster_name" {
+  description = "ECS cluster name for deployment (for API/Web pipelines)"
+  type        = string
+  default     = ""
+}
+
+variable "ecs_service_name" {
+  description = "ECS service name for deployment (for API/Web pipelines)"
+  type        = string
+  default     = ""
+}
+
+variable "alb_dns_name" {
+  description = "ALB DNS name for testing (for API/Web pipelines)"
+  type        = string
+  default     = ""
+}
+
+variable "vite_api_url" {
+  description = "VITE_API_URL for web builds (for Web pipeline)"
+  type        = string
+  default     = ""
 }
 
 variable "build_compute_type" {

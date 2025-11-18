@@ -79,7 +79,12 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "codebuild:BatchGetBuilds",
           "codebuild:StartBuild"
         ]
-        Resource = aws_codebuild_project.build_project.arn
+        Resource = concat(
+          [aws_codebuild_project.build_project.arn],
+          var.deploy_buildspec_path != "" ? [aws_codebuild_project.deploy_project[0].arn] : [],
+          var.test_buildspec_path != "" ? [aws_codebuild_project.test_project[0].arn] : [],
+          var.apply_buildspec_path != "" ? [aws_codebuild_project.apply_project[0].arn] : []
+        )
       },
       {
         Effect = "Allow"
@@ -156,6 +161,33 @@ resource "aws_iam_role_policy" "codebuild_policy" {
           "ecr:CompleteLayerUpload"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEqualsIfExists = {
+            "ecs:cluster" = var.ecs_cluster_name != "" ? var.ecs_cluster_name : "*"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEqualsIfExists = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
       }
     ]
   })
@@ -169,7 +201,7 @@ resource "aws_cloudwatch_log_group" "codebuild_logs" {
   tags = var.tags
 }
 
-# CodeBuild Project
+# CodeBuild Project - Build Stage
 resource "aws_codebuild_project" "build_project" {
   name          = "${var.pipeline_name}-build-${var.environment}"
   description   = "Build project for ${var.pipeline_name}"
@@ -211,6 +243,182 @@ resource "aws_codebuild_project" "build_project" {
   tags = var.tags
 }
 
+# CodeBuild Project - Deploy Stage
+resource "aws_codebuild_project" "deploy_project" {
+  count         = var.deploy_buildspec_path != "" ? 1 : 0
+  name          = "${var.pipeline_name}-deploy-${var.environment}"
+  description   = "Deploy project for ${var.pipeline_name}"
+  build_timeout = var.build_timeout
+  service_role  = aws_iam_role.codebuild_role.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = var.build_compute_type
+    image                       = var.build_image
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "AWS_REGION"
+      value = var.aws_region
+    }
+
+    environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = var.aws_account_id
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.environment_variables
+      content {
+        name  = environment_variable.key
+        value = environment_variable.value
+      }
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.ecr_repository_uri != "" ? [1] : []
+      content {
+        name  = "ECR_REPOSITORY_URI"
+        value = var.ecr_repository_uri
+      }
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.ecs_cluster_name != "" ? [1] : []
+      content {
+        name  = "ECS_CLUSTER_NAME"
+        value = var.ecs_cluster_name
+      }
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.ecs_service_name != "" ? [1] : []
+      content {
+        name  = "ECS_SERVICE_NAME"
+        value = var.ecs_service_name
+      }
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.vite_api_url != "" ? [1] : []
+      content {
+        name  = "VITE_API_URL"
+        value = var.vite_api_url
+      }
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebuild_logs.name
+      stream_name = "deploy"
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = var.deploy_buildspec_path
+  }
+
+  tags = var.tags
+}
+
+# CodeBuild Project - Test Stage
+resource "aws_codebuild_project" "test_project" {
+  count         = var.test_buildspec_path != "" ? 1 : 0
+  name          = "${var.pipeline_name}-test-${var.environment}"
+  description   = "Test project for ${var.pipeline_name}"
+  build_timeout = 15
+  service_role  = aws_iam_role.codebuild_role.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = var.build_compute_type
+    image                       = var.build_image
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = false
+
+    environment_variable {
+      name  = "AWS_REGION"
+      value = var.aws_region
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.alb_dns_name != "" ? [1] : []
+      content {
+        name  = "ALB_DNS_NAME"
+        value = var.alb_dns_name
+      }
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebuild_logs.name
+      stream_name = "test"
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = var.test_buildspec_path
+  }
+
+  tags = var.tags
+}
+
+# CodeBuild Project - Apply Stage (Infrastructure)
+resource "aws_codebuild_project" "apply_project" {
+  count         = var.apply_buildspec_path != "" ? 1 : 0
+  name          = "${var.pipeline_name}-apply-${var.environment}"
+  description   = "Apply project for ${var.pipeline_name}"
+  build_timeout = 60
+  service_role  = aws_iam_role.codebuild_role.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = var.build_compute_type
+    image                       = var.build_image
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = false
+
+    dynamic "environment_variable" {
+      for_each = var.environment_variables
+      content {
+        name  = environment_variable.key
+        value = environment_variable.value
+      }
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebuild_logs.name
+      stream_name = "apply"
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = var.apply_buildspec_path
+  }
+
+  tags = var.tags
+}
+
 # CodePipeline
 resource "aws_codepipeline" "pipeline" {
   name     = "${var.pipeline_name}-${var.environment}"
@@ -221,6 +429,7 @@ resource "aws_codepipeline" "pipeline" {
     type     = "S3"
   }
 
+  # Source Stage
   stage {
     name = "Source"
 
@@ -241,6 +450,7 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
 
+  # Build Stage
   stage {
     name = "Build"
 
@@ -255,6 +465,90 @@ resource "aws_codepipeline" "pipeline" {
 
       configuration = {
         ProjectName = aws_codebuild_project.build_project.name
+      }
+    }
+  }
+
+  # Approval Stage (for infrastructure pipeline)
+  dynamic "stage" {
+    for_each = var.enable_approval_stage ? [1] : []
+    content {
+      name = var.approval_stage_name
+
+      action {
+        name     = "Approval"
+        category = "Approval"
+        owner    = "AWS"
+        provider = "Manual"
+        version  = "1"
+
+        configuration = {
+          CustomData = "Please review the Terraform plan and approve to proceed with infrastructure deployment."
+        }
+      }
+    }
+  }
+
+  # Deploy Stage (for API/Web pipelines)
+  dynamic "stage" {
+    for_each = var.deploy_buildspec_path != "" ? [1] : []
+    content {
+      name = "Deploy"
+
+      action {
+        name             = "Deploy"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        version          = "1"
+        input_artifacts  = ["build_output"]
+        output_artifacts = ["deploy_output"]
+
+        configuration = {
+          ProjectName = aws_codebuild_project.deploy_project[0].name
+        }
+      }
+    }
+  }
+
+  # Test Stage (for API/Web pipelines)
+  dynamic "stage" {
+    for_each = var.test_buildspec_path != "" ? [1] : []
+    content {
+      name = "Test"
+
+      action {
+        name            = "Test"
+        category        = "Build"
+        owner           = "AWS"
+        provider        = "CodeBuild"
+        version         = "1"
+        input_artifacts = var.deploy_buildspec_path != "" ? ["deploy_output"] : ["build_output"]
+
+        configuration = {
+          ProjectName = aws_codebuild_project.test_project[0].name
+        }
+      }
+    }
+  }
+
+  # Apply Stage (for infrastructure pipeline)
+  dynamic "stage" {
+    for_each = var.apply_buildspec_path != "" ? [1] : []
+    content {
+      name = "Apply"
+
+      action {
+        name            = "Apply"
+        category        = "Build"
+        owner           = "AWS"
+        provider        = "CodeBuild"
+        version         = "1"
+        input_artifacts = var.enable_approval_stage ? ["build_output"] : ["build_output"]
+
+        configuration = {
+          ProjectName = aws_codebuild_project.apply_project[0].name
+        }
       }
     }
   }
