@@ -23,14 +23,7 @@ phases:
       - echo "Current directory: $(pwd)"
       - echo "Listing contents:"
       - ls -la
-      - echo "Checking for ops/iac directory..."
-      - if [ ! -d ops/iac ]; then
-          echo "ERROR: ops/iac not found"
-          ls -la
-          exit 1
-        else
-          echo "ops/iac exists"
-        fi
+      - echo "Changing to ops/iac directory..."
       - cd ops/iac
       - echo "In ops/iac directory: $(pwd)"
       - terraform init
