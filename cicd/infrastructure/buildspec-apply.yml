@@ -4,12 +4,9 @@ phases:
   install:
     commands:
       - echo "Installing AWS CLI..."
-      - apk add --no-cache curl unzip
-      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      - unzip awscliv2.zip
-      - ./aws/install
-      - export PATH=$PATH:/usr/local/bin
-      - /usr/local/bin/aws --version || aws --version
+      - apk add --no-cache python3 py3-pip
+      - pip3 install --upgrade awscli
+      - aws --version
       
   pre_build:
     commands:
