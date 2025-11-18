@@ -352,6 +352,20 @@ resource "aws_iam_role_policy" "codebuild_infrastructure_policy" {
           "codebuild:*"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "events:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:*"
+        ]
+        Resource = "*"
       }
     ]
   })
