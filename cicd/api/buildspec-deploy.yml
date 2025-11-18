@@ -23,8 +23,7 @@ phases:
   pre_build:
     commands:
       - echo "Starting API Deploy Phase..."
-      - |
-        echo "Deploy started on $(date)"
+      - echo "Deploy started on $(date)"
       - echo "Setting variables..."
       - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
       - export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
@@ -52,8 +51,7 @@ phases:
   post_build:
     commands:
       - echo "Post-deploy phase for API..."
-      - |
-        echo "Deployment completed on $(date)"
+      - echo "Deployment completed on $(date)"
       - echo "Image: $ECR_REPOSITORY:$IMAGE_TAG"
 
 artifacts:
