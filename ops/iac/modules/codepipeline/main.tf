@@ -188,6 +188,33 @@ resource "aws_iam_role_policy" "codebuild_policy" {
             "iam:PassedToService" = "ecs-tasks.amazonaws.com"
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = var.terraform_state_bucket_arn != "" ? var.terraform_state_bucket_arn : "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = var.terraform_state_bucket_arn != "" ? "${var.terraform_state_bucket_arn}/*" : "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
+        ]
+        Resource = var.terraform_state_table_arn != "" ? var.terraform_state_table_arn : "*"
       }
     ]
   })

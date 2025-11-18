@@ -150,6 +150,18 @@ variable "enable_notifications" {
   default     = true
 }
 
+variable "terraform_state_bucket_arn" {
+  description = "ARN of S3 bucket for Terraform state (for infrastructure pipeline)"
+  type        = string
+  default     = ""
+}
+
+variable "terraform_state_table_arn" {
+  description = "ARN of DynamoDB table for Terraform state locking (for infrastructure pipeline)"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

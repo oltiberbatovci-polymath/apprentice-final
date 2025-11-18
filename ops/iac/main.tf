@@ -309,6 +309,10 @@ module "infrastructure_pipeline" {
   enable_approval_stage   = true
   approval_stage_name     = "Approval"
 
+  # Terraform state backend permissions
+  terraform_state_bucket_arn = "arn:aws:s3:::apprenticefinal-bucket"
+  terraform_state_table_arn  = "arn:aws:dynamodb:${local.aws_region}:${local.aws_account_id}:table/apprenticefinal-terraform-locks-${var.environment}"
+
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "hashicorp/terraform:1.6"
   build_timeout      = 45
