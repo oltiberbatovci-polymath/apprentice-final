@@ -26,7 +26,8 @@ phases:
       - echo "Deploy started on $(date)"
       - echo "Setting variables..."
       - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
-      - export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
+      - |
+        export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
       - echo "ECR Repository: $ECR_REPOSITORY"
       - echo "Image Tag: $IMAGE_TAG"
       - echo "Building Docker image..."
