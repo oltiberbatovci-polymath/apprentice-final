@@ -11,7 +11,8 @@ phases:
   pre_build:
     commands:
       - echo "Starting Infrastructure Apply Phase..."
-      - echo "Apply started on $(date)"
+      - |
+        echo "Apply started on $(date)"
       - echo "Checking Terraform version..."
       - terraform --version
       - echo "Configuring AWS credentials..."
@@ -20,12 +21,14 @@ phases:
   build:
     commands:
       - echo "Initializing Terraform with backend..."
-      - echo "Current directory: $(pwd)"
+      - |
+        echo "Current directory: $(pwd)"
       - echo "Listing contents:"
       - ls -la
       - echo "Changing to ops/iac directory..."
       - cd ops/iac
-      - echo "In ops/iac directory: $(pwd)"
+      - |
+        echo "In ops/iac directory: $(pwd)"
       - terraform init
       - echo "Running terraform plan..."
       - terraform plan -out=tfplan
@@ -37,7 +40,8 @@ phases:
   post_build:
     commands:
       - echo "Post-apply phase for Infrastructure..."
-      - echo "Deployment completed on $(date)"
+      - |
+        echo "Deployment completed on $(date)"
       - echo "Getting Terraform outputs..."
       - terraform output -json || echo "No outputs available"
 
