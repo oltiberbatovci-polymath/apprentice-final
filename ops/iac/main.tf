@@ -306,7 +306,7 @@ module "infrastructure_pipeline" {
   branch_name             = var.branch_name
   buildspec_path          = "cicd/infrastructure/buildspec-infrastructure.yml"
   apply_buildspec_path    = "cicd/infrastructure/buildspec-apply.yml"
-  enable_approval_stage    = true
+  enable_approval_stage   = true
   approval_stage_name     = "Approval"
 
   build_compute_type = "BUILD_GENERAL1_SMALL"
