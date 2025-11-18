@@ -24,7 +24,9 @@ phases:
       - echo "Verifying Prisma installation..."
       - test -f node_modules/.bin/prisma && echo "prisma found" || (echo "ERROR - prisma not found" && exit 1)
       - echo "Generating Prisma client..."
-      - npx prisma generate
+      - |
+        export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+        npx prisma generate || (echo "Retrying Prisma generate..." && sleep 5 && npx prisma generate)
       - echo "Prisma client generated"
 
   build:
