@@ -15,8 +15,7 @@ phases:
       - echo "Checking Terraform version..."
       - terraform --version
       - echo "Configuring AWS credentials..."
-      - export PATH=$PATH:/usr/local/bin
-      - /usr/local/bin/aws sts get-caller-identity || aws sts get-caller-identity
+      - aws sts get-caller-identity
       
   build:
     commands:
