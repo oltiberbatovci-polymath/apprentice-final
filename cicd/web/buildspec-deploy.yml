@@ -27,8 +27,8 @@ phases:
       - echo "Setting variables..."
       - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
       - export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
-      - echo "ECR Repository: $ECR_REPOSITORY"
-      - echo "Image Tag: $IMAGE_TAG"
+      - echo "ECR Repository - $ECR_REPOSITORY"
+      - echo "Image Tag - $IMAGE_TAG"
       - echo "Building Docker image..."
       - cd packages/web
       - docker build --build-arg VITE_API_URL=${VITE_API_URL} -t $ECR_REPOSITORY:$IMAGE_TAG .
