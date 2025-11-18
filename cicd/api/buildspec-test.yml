@@ -1,0 +1,60 @@
+version: 0.2
+
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing curl and jq for health checks..."
+      - yum install -y curl jq
+
+  pre_build:
+    commands:
+      - echo "Starting API Test Phase..."
+      - echo "Test started on $(date)"
+      - echo "Waiting for service to be ready..."
+      - sleep 30
+
+  build:
+    commands:
+      - echo "Testing API health endpoint..."
+      - HEALTH_URL=${ALB_DNS_NAME}/api/health
+      - echo "Health check URL: $HEALTH_URL"
+      - MAX_RETRIES=10
+      - RETRY_COUNT=0
+      - |
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL || echo "000")
+          echo "HTTP Status Code: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Health check passed!"
+            curl -s $HEALTH_URL | jq . || curl -s $HEALTH_URL
+            exit 0
+          fi
+          
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+          if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "Waiting 10 seconds before retry..."
+            sleep 10
+          fi
+        done
+        
+        echo "✗ Health check failed after $MAX_RETRIES attempts"
+        exit 1
+
+  post_build:
+    commands:
+      - echo "Post-test phase for API..."
+      - echo "Tests completed on $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  name: api-test-artifact
+

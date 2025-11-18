@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting Infrastructure Apply Phase..."
+      - echo "Apply started on $(date)"
+      - echo "Checking Terraform version..."
+      - terraform --version
+      - echo "Configuring AWS credentials..."
+      - aws sts get-caller-identity
+      
+  build:
+    commands:
+      - echo "Initializing Terraform with backend..."
+      - cd ops/iac
+      - terraform init
+      - echo "Running terraform plan..."
+      - terraform plan -out=tfplan
+      - echo "Terraform plan completed"
+      - echo "Applying Terraform configuration..."
+      - terraform apply -auto-approve tfplan
+      - echo "Infrastructure deployment completed successfully"
+      
+  post_build:
+    commands:
+      - echo "Post-apply phase for Infrastructure..."
+      - echo "Deployment completed on $(date)"
+      - echo "Getting Terraform outputs..."
+      - terraform output -json || echo "No outputs available"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'ops/iac'
+  name: infrastructure-apply-artifact
+
