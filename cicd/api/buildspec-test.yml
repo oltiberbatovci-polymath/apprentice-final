@@ -10,7 +10,7 @@ phases:
       nodejs: 20
     commands:
       - echo "Installing curl and jq for health checks..."
-      - yum install -y curl jq
+      - apt-get update && apt-get install -y curl jq
 
   pre_build:
     commands:

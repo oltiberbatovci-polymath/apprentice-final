@@ -40,8 +40,42 @@ phases:
       - echo "Updating ECS service..."
       - aws ecs update-service --cluster ${ECS_CLUSTER_NAME} --service ${ECS_SERVICE_NAME} --force-new-deployment --region ${AWS_REGION}
       - echo "ECS service update initiated"
-      - echo "Waiting for service to stabilize..."
-      - aws ecs wait services-stable --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION}
+      - echo "Checking current service status..."
+      - aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].[status,runningCount,desiredCount,deployments[0].status]' --output table
+      - echo "Waiting for service to stabilize (this may take up to 15 minutes)..."
+      - |
+        MAX_WAIT_TIME=900  # 15 minutes in seconds
+        ELAPSED=0
+        INTERVAL=30
+        
+        while [ $ELAPSED -lt $MAX_WAIT_TIME ]; do
+          SERVICE_STATUS=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].status' --output text)
+          RUNNING_COUNT=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].runningCount' --output text)
+          DESIRED_COUNT=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].desiredCount' --output text)
+          DEPLOYMENT_STATUS=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].deployments[0].status' --output text)
+          
+          echo "[$ELAPSED/$MAX_WAIT_TIME] Service Status: $SERVICE_STATUS | Running: $RUNNING_COUNT/$DESIRED_COUNT | Deployment: $DEPLOYMENT_STATUS"
+          
+          if [ "$SERVICE_STATUS" = "ACTIVE" ] && [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DEPLOYMENT_STATUS" = "PRIMARY" ]; then
+            echo "✓ Service is stable!"
+            exit 0
+          fi
+          
+          if [ "$SERVICE_STATUS" = "DRAINING" ] || [ "$DEPLOYMENT_STATUS" = "FAILED" ]; then
+            echo "✗ Service deployment failed or is draining"
+            echo "Checking task status..."
+            aws ecs list-tasks --cluster ${ECS_CLUSTER_NAME} --service-name ${ECS_SERVICE_NAME} --region ${AWS_REGION} --output table
+            exit 1
+          fi
+          
+          sleep $INTERVAL
+          ELAPSED=$((ELAPSED + INTERVAL))
+        done
+        
+        echo "✗ Service did not stabilize within $MAX_WAIT_TIME seconds"
+        echo "Final service status:"
+        aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0]' --output json
+        exit 1
       - echo "ECS service deployment completed successfully"
 
   post_build:

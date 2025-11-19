@@ -217,6 +217,39 @@ resource "aws_iam_role_policy" "codebuild_policy" {
   })
 }
 
+# Additional read permissions for infrastructure pipeline (needed for terraform plan to read existing resources)
+resource "aws_iam_role_policy" "codebuild_read_permissions" {
+  count = var.apply_buildspec_path != "" ? 1 : 0
+  name  = "${var.pipeline_name}-codebuild-read-permissions"
+  role  = aws_iam_role.codebuild_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "events:DescribeRule",
+          "events:ListRules",
+          "events:ListTargetsByRule"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:DescribeTags"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Additional IAM Policy for Infrastructure Pipeline (broader permissions)
 resource "aws_iam_role_policy" "codebuild_infrastructure_policy" {
   count = var.apply_buildspec_path != "" ? 1 : 0
