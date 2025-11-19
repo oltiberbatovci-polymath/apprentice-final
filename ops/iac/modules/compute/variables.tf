@@ -51,7 +51,7 @@ variable "alb_certificate_arn" {
 variable "api_port" {
   description = "Port for API container"
   type        = number
-  default     = 3000
+  default     = 5000
 }
 
 variable "api_cpu" {
@@ -99,13 +99,13 @@ variable "api_memory_target" {
 variable "api_health_check_path" {
   description = "Health check path for API"
   type        = string
-  default     = "/health"
+  default     = "/api/health"
 }
 
 variable "api_health_check_command" {
   description = "Health check command for API container"
   type        = string
-  default     = "curl -f http://localhost:3000/health || exit 1"
+  default     = "curl -f http://localhost:5000/api/health || exit 1"
 }
 
 variable "api_environment_variables" {
