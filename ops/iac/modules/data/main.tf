@@ -41,7 +41,6 @@ resource "aws_db_parameter_group" "main" {
 
   description = "Managed by Terraform - stable parameter group for ${var.project_name} ${var.environment}"
 
-
   dynamic "parameter" {
     for_each = try(var.rds_parameters, [])
     content {
