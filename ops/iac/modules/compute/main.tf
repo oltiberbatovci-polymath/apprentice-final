@@ -134,33 +134,84 @@ resource "aws_lb_target_group" "api" {
   )
 }
 
-# Target Group for Web
-resource "aws_lb_target_group" "web" {
-  name                 = "${var.project_name}-web-tg-${var.environment}"
-  port                 = var.web_port
-  protocol             = "HTTP"
-  vpc_id               = var.vpc_id
-  target_type          = "ip"
-  deregistration_delay = 30
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 30
-    path                = var.web_health_check_path
-    protocol            = "HTTP"
-    matcher             = "200"
-  }
+# S3 Bucket for Web Static Hosting
+resource "aws_s3_bucket" "web" {
+  bucket = "${lower(var.project_name)}-web-${var.environment}-${data.aws_caller_identity.current.account_id}"
 
   tags = merge(
     var.tags,
     {
-      Name = "${var.project_name}-web-tg-${var.environment}"
+      Name = "${var.project_name}-web-${var.environment}"
     }
   )
 }
+
+resource "aws_s3_bucket_versioning" "web" {
+  bucket = aws_s3_bucket.web.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "web" {
+  bucket = aws_s3_bucket.web.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# S3 Bucket Policy for CloudFront access
+# Note: We'll use CloudFront Origin Access Identity (OAI) for better security
+# For now, we'll allow public read access for website hosting
+resource "aws_s3_bucket_policy" "web" {
+  bucket = aws_s3_bucket.web.id
+
+  # Ensure public access block allows the policy
+  depends_on = [aws_s3_bucket_public_access_block.web]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.web.arn}/*"
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_public_access_block" "web" {
+  bucket = aws_s3_bucket.web.id
+
+  # Allow public access for website hosting (CloudFront will access via custom origin)
+  # These settings must be false to allow the bucket policy
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_website_configuration" "web" {
+  bucket = aws_s3_bucket.web.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "index.html"
+  }
+}
+
+# Data source for current AWS account
+data "aws_caller_identity" "current" {}
 
 # ALB Listener (HTTP - redirects to HTTPS if certificate provided)
 resource "aws_lb_listener" "http" {
@@ -182,9 +233,6 @@ resource "aws_lb_listener" "http" {
       content {
         target_group {
           arn = aws_lb_target_group.api.arn
-        }
-        target_group {
-          arn = aws_lb_target_group.web.arn
         }
       }
     }
@@ -227,25 +275,6 @@ resource "aws_ecr_repository" "api" {
   )
 }
 
-resource "aws_ecr_repository" "web" {
-  name                 = lower("${var.project_name}-web-${var.environment}")
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  encryption_configuration {
-    encryption_type = "AES256"
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-web-ecr-${var.environment}"
-    }
-  )
-}
 
 # ECS Task Definition - API
 resource "aws_ecs_task_definition" "api" {
@@ -302,58 +331,6 @@ resource "aws_ecs_task_definition" "api" {
   )
 }
 
-# ECS Task Definition - Web
-resource "aws_ecs_task_definition" "web" {
-  family                   = "${var.project_name}-web-${var.environment}"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = var.web_cpu
-  memory                   = var.web_memory
-  execution_role_arn       = var.ecs_task_execution_role_arn
-  task_role_arn            = var.ecs_task_role_arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "web"
-      image     = "${aws_ecr_repository.web.repository_url}:latest"
-      essential = true
-
-      portMappings = [
-        {
-          hostPort      = var.web_port
-          containerPort = var.web_port
-          protocol      = "tcp"
-        }
-      ]
-
-      environment = var.web_environment_variables
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = "/aws/ecs/${var.project_name}-web-${var.environment}"
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
-
-      healthCheck = {
-        command     = ["CMD-SHELL", var.web_health_check_command]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
-    }
-  ])
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-web-task-${var.environment}"
-    }
-  )
-}
 
 # CloudWatch Log Groups
 resource "aws_cloudwatch_log_group" "api" {
@@ -368,17 +345,6 @@ resource "aws_cloudwatch_log_group" "api" {
   )
 }
 
-resource "aws_cloudwatch_log_group" "web" {
-  name              = "/aws/ecs/${var.project_name}-web-${var.environment}"
-  retention_in_days = var.log_retention_days
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-web-logs-${var.environment}"
-    }
-  )
-}
 
 # ECS Service - API
 # ECS Service - API ← FINAL CORRECT VERSION
@@ -398,7 +364,7 @@ resource "aws_ecs_service" "api" {
   load_balancer {
     target_group_arn = aws_lb_target_group.api.arn
     container_name   = "api"
-    container_port   = var.api_port        # ← 5000
+    container_port   = var.api_port # ← 5000
   }
 
   deployment_minimum_healthy_percent = 100
@@ -417,41 +383,6 @@ resource "aws_ecs_service" "api" {
   )
 }
 
-# ECS Service - Web ← FINAL CORRECT VERSION
-resource "aws_ecs_service" "web" {
-  name            = "${var.project_name}-web-service-${var.environment}"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.web.arn
-  desired_count   = var.web_desired_count
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.web.arn
-    container_name   = "web"
-    container_port   = var.web_port         # ← 3000
-  }
-
-  deployment_minimum_healthy_percent = 100
-  deployment_maximum_percent         = 200
-
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-web-service-${var.environment}"
-    }
-  )
-}
 
 # Auto Scaling - API Service
 resource "aws_appautoscaling_target" "api" {
@@ -496,46 +427,4 @@ resource "aws_appautoscaling_policy" "api_memory" {
   }
 }
 
-# Auto Scaling - Web Service
-resource "aws_appautoscaling_target" "web" {
-  max_capacity       = var.web_max_capacity
-  min_capacity       = var.web_min_capacity
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.web.name}"
-  scalable_dimension = "ecs:service:DesiredCount"
-  service_namespace  = "ecs"
-}
-
-resource "aws_appautoscaling_policy" "web_cpu" {
-  name               = "${var.project_name}-web-cpu-autoscaling-${var.environment}"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.web.resource_id
-  scalable_dimension = aws_appautoscaling_target.web.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.web.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-    target_value       = var.web_cpu_target
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 60
-  }
-}
-
-resource "aws_appautoscaling_policy" "web_memory" {
-  name               = "${var.project_name}-web-memory-autoscaling-${var.environment}"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.web.resource_id
-  scalable_dimension = aws_appautoscaling_target.web.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.web.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
-    }
-    target_value       = var.web_memory_target
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 60
-  }
-}
 

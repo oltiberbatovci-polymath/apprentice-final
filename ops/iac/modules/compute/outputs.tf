@@ -35,19 +35,24 @@ output "api_target_group_arn" {
   value       = aws_lb_target_group.api.arn
 }
 
-output "web_target_group_arn" {
-  description = "ARN of the Web target group"
-  value       = aws_lb_target_group.web.arn
-}
-
 output "ecr_api_repository_url" {
   description = "URL of the API ECR repository"
   value       = aws_ecr_repository.api.repository_url
 }
 
-output "ecr_web_repository_url" {
-  description = "URL of the Web ECR repository"
-  value       = aws_ecr_repository.web.repository_url
+output "web_s3_bucket_name" {
+  description = "Name of the S3 bucket for web static hosting"
+  value       = aws_s3_bucket.web.id
+}
+
+output "web_s3_bucket_arn" {
+  description = "ARN of the S3 bucket for web static hosting"
+  value       = aws_s3_bucket.web.arn
+}
+
+output "web_s3_bucket_website_endpoint" {
+  description = "Website endpoint of the S3 bucket"
+  value       = aws_s3_bucket_website_configuration.web.website_endpoint
 }
 
 output "ecs_security_group_id" {
@@ -65,8 +70,4 @@ output "api_service_name" {
   value       = aws_ecs_service.api.name
 }
 
-output "web_service_name" {
-  description = "Name of the Web ECS service"
-  value       = aws_ecs_service.web.name
-}
 

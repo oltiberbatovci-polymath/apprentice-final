@@ -15,6 +15,12 @@ variable "alb_dns_name" {
   type        = string
 }
 
+variable "web_s3_bucket_name" {
+  description = "Name of the S3 bucket for web static hosting"
+  type        = string
+  default     = ""
+}
+
 variable "enable_https" {
   description = "Enable HTTPS with custom domain"
   type        = bool

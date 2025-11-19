@@ -31,7 +31,20 @@ phases:
   build:
     commands:
       - echo "Testing Web frontend endpoint..."
-      - export WEB_URL=${ALB_DNS_NAME}
+      - |
+        # Use CloudFront URL if available, otherwise use S3 website endpoint
+        if [ -n "${CLOUDFRONT_DOMAIN_NAME}" ]; then
+          export WEB_URL="https://${CLOUDFRONT_DOMAIN_NAME}"
+          echo "Testing via CloudFront: $WEB_URL"
+        elif [ -n "${WEB_S3_BUCKET_NAME}" ]; then
+          # Get S3 website endpoint
+          export AWS_REGION=${AWS_REGION:-us-east-1}
+          export WEB_URL="http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
+          echo "Testing via S3 website endpoint: $WEB_URL"
+        else
+          export WEB_URL=${ALB_DNS_NAME}
+          echo "Testing via ALB: $WEB_URL (Note: Web is now served from S3/CloudFront)"
+        fi
       - echo "Web URL - $WEB_URL"
       - |
         export MAX_RETRIES=20

@@ -108,6 +108,12 @@ variable "vite_api_url" {
   default     = ""
 }
 
+variable "web_s3_bucket_name" {
+  description = "S3 bucket name for web static hosting (for Web pipeline)"
+  type        = string
+  default     = ""
+}
+
 variable "build_compute_type" {
   description = "CodeBuild compute type"
   type        = string

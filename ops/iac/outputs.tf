@@ -82,9 +82,9 @@ output "ecr_api_repository_url" {
   value       = module.compute.ecr_api_repository_url
 }
 
-output "ecr_web_repository_url" {
-  description = "URL of the Web ECR repository"
-  value       = module.compute.ecr_web_repository_url
+output "web_s3_bucket_name" {
+  description = "Name of the S3 bucket for web static hosting"
+  value       = module.compute.web_s3_bucket_name
 }
 
 # Edge Outputs

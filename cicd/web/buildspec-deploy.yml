@@ -10,79 +10,65 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - echo "Verifying Docker and AWS CLI..."
-      - docker --version
+      - echo "Installing AWS CLI..."
+      - apt-get update && apt-get install -y awscli
       - aws --version
-      - echo "Logging in to ECR..."
-      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
   pre_build:
     commands:
       - echo "Starting Web Deploy Phase..."
       - echo "Deploy started on $(date)"
-      - echo "Setting variables..."
-      - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
-      - export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
-      - echo "ECR Repository - $ECR_REPOSITORY"
-      - echo "Image Tag - $IMAGE_TAG"
-      - echo "Building Docker image..."
-      - cd packages/web
-      - docker build --build-arg VITE_API_URL=${VITE_API_URL} -t $ECR_REPOSITORY:$IMAGE_TAG .
-      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:latest
-      - echo "Docker image built successfully"
+      - echo "S3 Bucket: ${WEB_S3_BUCKET_NAME}"
+      - echo "Verifying S3 bucket exists..."
+      - aws s3 ls s3://${WEB_S3_BUCKET_NAME} || (echo "ERROR: S3 bucket ${WEB_S3_BUCKET_NAME} not found" && exit 1)
+      - echo "✓ S3 bucket verified"
 
   build:
     commands:
-      - echo "Pushing Docker image to ECR..."
-      - docker push $ECR_REPOSITORY:$IMAGE_TAG
-      - docker push $ECR_REPOSITORY:latest
-      - echo "Image pushed to ECR successfully"
-      - echo "Updating ECS service..."
-      - aws ecs update-service --cluster ${ECS_CLUSTER_NAME} --service ${ECS_SERVICE_NAME} --force-new-deployment --region ${AWS_REGION}
-      - echo "ECS service update initiated"
-      - echo "Checking current service status..."
-      - aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].[status,runningCount,desiredCount,deployments[0].status]' --output table
-      - echo "Waiting for service to stabilize (this may take up to 15 minutes)..."
+      - echo "Deploying web application to S3..."
+      - echo "Source directory: packages/web/dist"
+      - ls -la packages/web/dist/ || (echo "ERROR: dist directory not found. Make sure build stage completed successfully." && exit 1)
+      - echo "Syncing files to S3..."
+      - aws s3 sync packages/web/dist/ s3://${WEB_S3_BUCKET_NAME}/ --delete --exact-timestamps
+      - echo "✓ Files synced to S3"
+      - echo "Setting cache control headers..."
       - |
-        MAX_WAIT_TIME=900  # 15 minutes in seconds
-        ELAPSED=0
-        INTERVAL=30
-        
-        while [ $ELAPSED -lt $MAX_WAIT_TIME ]; do
-          SERVICE_STATUS=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].status' --output text)
-          RUNNING_COUNT=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].runningCount' --output text)
-          DESIRED_COUNT=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].desiredCount' --output text)
-          DEPLOYMENT_STATUS=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].deployments[0].status' --output text)
-          
-          echo "[$ELAPSED/$MAX_WAIT_TIME] Service Status: $SERVICE_STATUS | Running: $RUNNING_COUNT/$DESIRED_COUNT | Deployment: $DEPLOYMENT_STATUS"
-          
-          if [ "$SERVICE_STATUS" = "ACTIVE" ] && [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DEPLOYMENT_STATUS" = "PRIMARY" ]; then
-            echo "✓ Service is stable!"
-            exit 0
-          fi
-          
-          if [ "$SERVICE_STATUS" = "DRAINING" ] || [ "$DEPLOYMENT_STATUS" = "FAILED" ]; then
-            echo "✗ Service deployment failed or is draining"
-            echo "Checking task status..."
-            aws ecs list-tasks --cluster ${ECS_CLUSTER_NAME} --service-name ${ECS_SERVICE_NAME} --region ${AWS_REGION} --output table
-            exit 1
-          fi
-          
-          sleep $INTERVAL
-          ELAPSED=$((ELAPSED + INTERVAL))
-        done
-        
-        echo "✗ Service did not stabilize within $MAX_WAIT_TIME seconds"
-        echo "Final service status:"
-        aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0]' --output json
-        exit 1
-      - echo "ECS service deployment completed successfully"
+        # Set cache headers for different file types
+        aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
+          --recursive \
+          --exclude "*" \
+          --include "*.html" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE || true
+        aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
+          --recursive \
+          --exclude "*" \
+          --include "*.js" \
+          --include "*.css" \
+          --cache-control "public, max-age=31536000, immutable" \
+          --metadata-directive REPLACE || true
+        aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
+          --recursive \
+          --exclude "*" \
+          --include "*.png" \
+          --include "*.jpg" \
+          --include "*.jpeg" \
+          --include "*.gif" \
+          --include "*.svg" \
+          --include "*.ico" \
+          --cache-control "public, max-age=31536000, immutable" \
+          --metadata-directive REPLACE || true
+      - echo "✓ Cache headers set"
+      - echo "Listing deployed files..."
+      - aws s3 ls s3://${WEB_S3_BUCKET_NAME}/ --recursive | head -20
 
   post_build:
     commands:
       - echo "Post-deploy phase for Web..."
       - echo "Deployment completed on $(date)"
-      - echo "Image - $ECR_REPOSITORY:$IMAGE_TAG"
+      - echo "S3 Bucket: ${WEB_S3_BUCKET_NAME}"
+      - echo "✓ Web application deployed to S3 successfully"
+      - echo "Note: CloudFront cache invalidation may be needed for immediate updates"
 
 artifacts:
   files:

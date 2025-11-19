@@ -1,6 +1,9 @@
 # Edge Module
 # Creates CloudFront, WAF, Route53, and ACM certificates
 
+# Data source for current AWS region
+data "aws_region" "current" {}
+
 # ACM Certificate (for CloudFront - must be in us-east-1)
 resource "aws_acm_certificate" "cloudfront" {
   count             = var.enable_https ? 1 : 0
@@ -167,10 +170,24 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
+  dynamic "origin" {
+    for_each = var.web_s3_bucket_name != "" ? [1] : []
+    content {
+      domain_name = "${var.web_s3_bucket_name}.s3-website-${data.aws_region.current.name}.amazonaws.com"
+      origin_id   = "s3-origin"
+      custom_origin_config {
+        http_port              = 80
+        https_port             = 443
+        origin_protocol_policy = "http-only"
+        origin_ssl_protocols   = ["TLSv1.2"]
+      }
+    }
+  }
+
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "alb-origin"
+    target_origin_id = var.web_s3_bucket_name != "" ? "s3-origin" : "alb-origin"
 
     forwarded_values {
       query_string = true
@@ -196,7 +213,7 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # Cache behavior for API
+  # Cache behavior for API - route to ALB
   ordered_cache_behavior {
     path_pattern     = "/api/*"
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]

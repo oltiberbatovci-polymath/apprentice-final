@@ -217,6 +217,39 @@ resource "aws_iam_role_policy" "codebuild_policy" {
   })
 }
 
+# Local to determine if this is the web pipeline
+locals {
+  is_web_pipeline = startswith(var.pipeline_name, "web-pipeline")
+}
+
+# Additional IAM policy for S3 web bucket access (for web pipeline)
+# Count depends only on pipeline name (known at plan time), bucket name is resolved at apply time
+resource "aws_iam_role_policy" "codebuild_s3_web_policy" {
+  count = local.is_web_pipeline ? 1 : 0
+  name  = "${var.pipeline_name}-codebuild-s3-web-policy"
+  role  = aws_iam_role.codebuild_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = var.web_s3_bucket_name != "" ? [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.web_s3_bucket_name}",
+          "arn:aws:s3:::${var.web_s3_bucket_name}/*"
+        ]
+      }
+    ] : []
+  })
+}
+
 # Add read permissions to base policy for infrastructure pipeline (needed immediately for terraform plan)
 resource "aws_iam_role_policy" "codebuild_read_permissions_base" {
   count = var.apply_buildspec_path != "" ? 1 : 0
@@ -688,6 +721,15 @@ resource "aws_codebuild_project" "test_project" {
         value = var.ecs_service_name
       }
     }
+
+    dynamic "environment_variable" {
+      # Use pipeline name check (known at plan time) instead of bucket name
+      for_each = local.is_web_pipeline ? [1] : []
+      content {
+        name  = "WEB_S3_BUCKET_NAME"
+        value = var.web_s3_bucket_name
+      }
+    }
   }
 
   logs_config {
@@ -893,6 +935,13 @@ resource "aws_sns_topic" "pipeline_notifications" {
   tags = var.tags
 }
 
+# CloudWatch Event Target for SNS
+resource "aws_cloudwatch_event_target" "sns" {
+  count = var.enable_notifications ? 1 : 0
+  rule  = aws_cloudwatch_event_rule.pipeline_event[0].name
+  arn   = aws_sns_topic.pipeline_notifications[0].arn
+}
+
 # CloudWatch Event Rule for Pipeline State Changes
 resource "aws_cloudwatch_event_rule" "pipeline_event" {
   count       = var.enable_notifications ? 1 : 0
@@ -908,13 +957,6 @@ resource "aws_cloudwatch_event_rule" "pipeline_event" {
   })
 
   tags = var.tags
-}
-
-# CloudWatch Event Target for SNS
-resource "aws_cloudwatch_event_target" "sns" {
-  count = var.enable_notifications ? 1 : 0
-  rule  = aws_cloudwatch_event_rule.pipeline_event[0].name
-  arn   = aws_sns_topic.pipeline_notifications[0].arn
 }
 
 # SNS Topic Policy to allow CloudWatch Events

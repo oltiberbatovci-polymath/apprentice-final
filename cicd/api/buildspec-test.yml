@@ -52,17 +52,18 @@ phases:
             
             # Explain common error codes
             case "$HTTP_CODE" in
+              "000")
+                echo "⚠ Connection failed: Could not reach the endpoint."
+                ;;
               "502")
                 echo "⚠ 502 Bad Gateway: ALB cannot reach healthy targets. API service may still be deploying or containers may be unhealthy."
                 ;;
               "503")
                 echo "⚠ 503 Service Unavailable: API service is temporarily unavailable."
                 ;;
+                ;;
               "504")
                 echo "⚠ 504 Gateway Timeout: Request timed out."
-                ;;
-              "000")
-                echo "⚠ Connection failed: Could not reach the endpoint."
                 ;;
             esac
           fi

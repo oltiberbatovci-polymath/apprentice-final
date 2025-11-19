@@ -156,14 +156,6 @@ module "compute" {
     }
   ]
 
-  # Web Configuration
-  web_port              = var.web_port
-  web_cpu               = var.web_cpu
-  web_memory            = var.web_memory
-  web_desired_count     = var.web_desired_count
-  web_min_capacity      = var.web_min_capacity
-  web_max_capacity      = var.web_max_capacity
-  web_health_check_path = var.web_health_check_path
 
   enable_container_insights = true
   log_retention_days        = 7
@@ -213,6 +205,7 @@ module "edge" {
   project_name              = var.project_name
   environment               = var.environment
   alb_dns_name              = module.compute.alb_dns_name
+  web_s3_bucket_name        = module.compute.web_s3_bucket_name
   enable_https              = var.enable_https
   domain_name               = var.domain_name
   subject_alternative_names = var.subject_alternative_names
@@ -277,10 +270,8 @@ module "web_pipeline" {
   build_timeout      = 30
   privileged_mode    = true
 
-  # ECR and ECS configuration for deployment
-  ecr_repository_uri = module.compute.ecr_web_repository_url
-  ecs_cluster_name   = module.compute.ecs_cluster_name
-  ecs_service_name   = module.compute.web_service_name
+  # S3 configuration for static web hosting
+  web_s3_bucket_name = module.compute.web_s3_bucket_name
   alb_dns_name       = module.compute.alb_dns_name
   vite_api_url       = "http://${module.compute.alb_dns_name}/api"
 
