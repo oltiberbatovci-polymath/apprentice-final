@@ -64,7 +64,7 @@ variable "rds_engine" {
 variable "rds_engine_version" {
   description = "RDS engine version"
   type        = string
-  default     = "15.4"
+  default     = "16.1"
 }
 
 variable "rds_instance_class" {

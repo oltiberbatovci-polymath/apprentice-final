@@ -672,6 +672,22 @@ resource "aws_codebuild_project" "test_project" {
         value = var.alb_dns_name
       }
     }
+
+    dynamic "environment_variable" {
+      for_each = var.ecs_cluster_name != "" ? [1] : []
+      content {
+        name  = "ECS_CLUSTER_NAME"
+        value = var.ecs_cluster_name
+      }
+    }
+
+    dynamic "environment_variable" {
+      for_each = var.ecs_service_name != "" ? [1] : []
+      content {
+        name  = "ECS_SERVICE_NAME"
+        value = var.ecs_service_name
+      }
+    }
   }
 
   logs_config {
