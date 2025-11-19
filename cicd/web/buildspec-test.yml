@@ -10,7 +10,7 @@ phases:
       nodejs: 20
     commands:
       - echo "Installing curl for health checks..."
-      - yum install -y curl
+      - apt-get update && apt-get install -y curl
 
   pre_build:
     commands:
@@ -24,7 +24,8 @@ phases:
       - echo "Testing Web frontend endpoint..."
       - export WEB_URL=${ALB_DNS_NAME}
       - echo "Web URL - $WEB_URL"
-      - export MAX_RETRIES=10
+      - |
+        export MAX_RETRIES=10
         export RETRY_COUNT=0
         while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
           echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."

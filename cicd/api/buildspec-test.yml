@@ -24,7 +24,8 @@ phases:
       - echo "Testing API health endpoint..."
       - export HEALTH_URL=${ALB_DNS_NAME}/api/health
       - echo "Health check URL - $HEALTH_URL"
-      - export MAX_RETRIES=10
+      - |
+        export MAX_RETRIES=10
         export RETRY_COUNT=0
         while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
           echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
