@@ -217,10 +217,10 @@ resource "aws_iam_role_policy" "codebuild_policy" {
   })
 }
 
-# Additional read permissions for infrastructure pipeline (needed for terraform plan to read existing resources)
-resource "aws_iam_role_policy" "codebuild_read_permissions" {
+# Add read permissions to base policy for infrastructure pipeline (needed immediately for terraform plan)
+resource "aws_iam_role_policy" "codebuild_read_permissions_base" {
   count = var.apply_buildspec_path != "" ? 1 : 0
-  name  = "${var.pipeline_name}-codebuild-read-permissions"
+  name  = "${var.pipeline_name}-codebuild-read-permissions-base"
   role  = aws_iam_role.codebuild_role.id
 
   policy = jsonencode({
@@ -231,7 +231,9 @@ resource "aws_iam_role_policy" "codebuild_read_permissions" {
         Action = [
           "events:DescribeRule",
           "events:ListRules",
-          "events:ListTargetsByRule"
+          "events:ListTargetsByRule",
+          "events:DescribeEventBus",
+          "events:ListEventBuses"
         ]
         Resource = "*"
       },
@@ -242,7 +244,107 @@ resource "aws_iam_role_policy" "codebuild_read_permissions" {
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeListeners",
           "elasticloadbalancing:DescribeRules",
-          "elasticloadbalancing:DescribeTags"
+          "elasticloadbalancing:DescribeTags",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeInternetGateways",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeInstances"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:DescribeDBClusters",
+          "rds:DescribeDBSubnetGroups",
+          "rds:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticache:DescribeCacheClusters",
+          "elasticache:DescribeReplicationGroups",
+          "elasticache:DescribeCacheSubnetGroups",
+          "elasticache:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeClusters",
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:ListClusters",
+          "ecs:ListServices",
+          "ecs:ListTaskDefinitions"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:ListMetrics",
+          "cloudwatch:GetDashboard",
+          "cloudwatch:ListDashboards"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:ListTopics",
+          "sns:GetTopicAttributes",
+          "sns:ListSubscriptionsByTopic"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudfront:GetDistribution",
+          "cloudfront:ListDistributions"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "route53:ListHostedZones",
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "acm:ListCertificates",
+          "acm:DescribeCertificate"
         ]
         Resource = "*"
       }
