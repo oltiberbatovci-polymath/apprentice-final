@@ -22,13 +22,21 @@ variable "aws_account_id" {
 }
 
 variable "codestar_connection_arn" {
-  description = "ARN of the CodeStar connection to GitHub"
+  description = "ARN of the CodeStar connection to GitHub (required for pipelines)"
   type        = string
+  validation {
+    condition     = var.codestar_connection_arn != "" && length(var.codestar_connection_arn) > 0
+    error_message = "codestar_connection_arn is required and cannot be empty. Provide a valid CodeStar connection ARN."
+  }
 }
 
 variable "repository_id" {
-  description = "GitHub repository ID (format: owner/repo)"
+  description = "GitHub repository ID (format: owner/repo) (required for pipelines)"
   type        = string
+  validation {
+    condition     = var.repository_id != "" && length(var.repository_id) > 0
+    error_message = "repository_id is required and cannot be empty. Provide a valid GitHub repository ID (e.g., owner/repo-name)."
+  }
 }
 
 variable "branch_name" {

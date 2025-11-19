@@ -290,13 +290,23 @@ variable "error_rate_threshold" {
 # Variables for Pipeline Infrastructure
 
 variable "codestar_connection_arn" {
-  description = "ARN of the CodeStar connection to GitHub"
+  description = "ARN of the CodeStar connection to GitHub (required for pipelines)"
   type        = string
+  default     = ""
+  validation {
+    condition     = var.codestar_connection_arn == "" || length(var.codestar_connection_arn) > 0
+    error_message = "codestar_connection_arn cannot be empty if provided"
+  }
 }
 
 variable "repository_id" {
-  description = "GitHub repository ID (format: owner/repo-name)"
+  description = "GitHub repository ID (format: owner/repo-name) (required for pipelines)"
   type        = string
+  default     = ""
+  validation {
+    condition     = var.repository_id == "" || length(var.repository_id) > 0
+    error_message = "repository_id cannot be empty if provided"
+  }
 }
 
 variable "branch_name" {

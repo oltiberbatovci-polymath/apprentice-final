@@ -160,13 +160,18 @@ resource "aws_cloudfront_distribution" "main" {
   aliases = var.enable_https ? [var.domain_name] : []
 
   origin {
-    domain_name = var.alb_dns_name
-    origin_id   = "alb-origin"
+    domain_name         = var.alb_dns_name
+    origin_id           = "alb-origin"
+    connection_attempts  = 3
+    connection_timeout  = 10
+    origin_path         = ""
     custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
+      http_port                = 80
+      https_port               = 443
+      origin_protocol_policy   = "https-only"
+      origin_ssl_protocols     = ["TLSv1.2"]
+      origin_keepalive_timeout  = 5
+      origin_read_timeout      = 30
     }
   }
 
@@ -249,6 +254,13 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   web_acl_id = aws_wafv2_web_acl.main.arn
+
+  lifecycle {
+    # Workaround for AWS provider bug with CloudFront origin configuration
+    # The provider sometimes produces inconsistent plans during apply
+    # This prevents Terraform from trying to update origins unnecessarily
+    create_before_destroy = true
+  }
 
   tags = merge(
     var.tags,

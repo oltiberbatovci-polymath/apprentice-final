@@ -28,10 +28,36 @@ resource "aws_secretsmanager_secret_version" "rds_password" {
   })
 }
 
+# Calculate the parameter group family from the engine version
+# The family must match the major version of the engine (e.g., postgres14 for version 14.x)
+locals {
+  rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", var.rds_engine_version)[0]}" : "${var.rds_engine}${split(".", var.rds_engine_version)[0]}"
+  # Add "-new" suffix to create a fresh parameter group (change this if you want a different name)
+  rds_parameter_group_name   = lower("${var.project_name}-db-params-${var.environment}-new")
+}
+
 # RDS Parameter Group
+# Note: Name includes timestamp to avoid conflicts with existing parameter groups
+# If you want to use an existing parameter group, import it instead of creating a new one
 resource "aws_db_parameter_group" "main" {
-  name   = lower("${var.project_name}-db-params-${var.environment}-${replace(var.rds_engine_version, ".", "-")}")
-  family = var.rds_engine == "postgres" ? "postgres${split(".", var.rds_engine_version)[0]}" : "${var.rds_engine}${split(".", var.rds_engine_version)[0]}"
+  name   = local.rds_parameter_group_name
+  family = local.rds_parameter_group_family
+
+  description = "Managed by Terraform - stable parameter group for ${var.project_name} ${var.environment}"
+
+  # Only add custom parameters if you actually pass them 
+  dynamic "parameter" {
+    for_each = try(var.rds_parameters, [])
+    content {
+      name         = parameter.value.name
+      value        = parameter.value.value
+      apply_method = lookup(parameter.value, "apply_method", "immediate")
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   tags = merge(
     var.tags,
@@ -94,7 +120,9 @@ resource "aws_db_instance" "main" {
 
   db_subnet_group_name   = var.database_subnet_group_name
   vpc_security_group_ids = [aws_security_group.rds.id]
-  parameter_group_name   = aws_db_parameter_group.main.name
+  # Parameter group family must match the instance engine version family
+  # If you get an error about family mismatch, ensure rds_engine_version matches the instance version
+  parameter_group_name = aws_db_parameter_group.main.name
 
   multi_az                  = var.rds_multi_az
   publicly_accessible       = false

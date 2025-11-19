@@ -126,6 +126,16 @@ variable "rds_cloudwatch_logs_exports" {
   default     = ["postgresql", "upgrade"]
 }
 
+variable "rds_parameters" {
+  description = "List of custom RDS parameter group parameters"
+  type = list(object({
+    name         = string
+    value        = string
+    apply_method = optional(string, "immediate")
+  }))
+  default = []
+}
+
 # Elasticache Variables
 variable "elasticache_engine_version" {
   description = "Elasticache Redis engine version"

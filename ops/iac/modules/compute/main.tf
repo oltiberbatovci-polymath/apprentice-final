@@ -135,6 +135,8 @@ resource "aws_lb_target_group" "api" {
 }
 
 # S3 Bucket for Web Static Hosting
+# Note: If the bucket already exists, import it first:
+# terraform import module.compute.aws_s3_bucket.web <bucket-name>
 resource "aws_s3_bucket" "web" {
   bucket = "${lower(var.project_name)}-web-${var.environment}-${data.aws_caller_identity.current.account_id}"
 

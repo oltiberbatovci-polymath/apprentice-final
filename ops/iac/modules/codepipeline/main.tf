@@ -58,42 +58,46 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:PutObject",
-          "s3:GetBucketLocation",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.pipeline_artifacts.arn,
-          "${aws_s3_bucket.pipeline_artifacts.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "codebuild:BatchGetBuilds",
-          "codebuild:StartBuild"
-        ]
-        Resource = concat(
-          [aws_codebuild_project.build_project.arn],
-          var.deploy_buildspec_path != "" ? [aws_codebuild_project.deploy_project[0].arn] : [],
-          var.test_buildspec_path != "" ? [aws_codebuild_project.test_project[0].arn] : [],
-          var.apply_buildspec_path != "" ? [aws_codebuild_project.apply_project[0].arn] : []
-        )
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "codestar-connections:UseConnection"
-        ]
-        Resource = var.codestar_connection_arn
-      }
-    ]
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:PutObject",
+            "s3:GetBucketLocation",
+            "s3:ListBucket"
+          ]
+          Resource = [
+            aws_s3_bucket.pipeline_artifacts.arn,
+            "${aws_s3_bucket.pipeline_artifacts.arn}/*"
+          ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "codebuild:BatchGetBuilds",
+            "codebuild:StartBuild"
+          ]
+          Resource = concat(
+            [aws_codebuild_project.build_project.arn],
+            var.deploy_buildspec_path != "" ? [aws_codebuild_project.deploy_project[0].arn] : [],
+            var.test_buildspec_path != "" ? [aws_codebuild_project.test_project[0].arn] : [],
+            var.apply_buildspec_path != "" ? [aws_codebuild_project.apply_project[0].arn] : []
+          )
+        }
+      ],
+      var.codestar_connection_arn != "" ? [
+        {
+          Effect = "Allow"
+          Action = [
+            "codestar-connections:UseConnection"
+          ]
+          Resource = var.codestar_connection_arn
+        }
+      ] : []
+    )
   })
 }
 
@@ -657,6 +661,15 @@ resource "aws_codebuild_project" "deploy_project" {
         value = var.vite_api_url
       }
     }
+
+    dynamic "environment_variable" {
+      # Use pipeline name check (known at plan time) instead of bucket name
+      for_each = local.is_web_pipeline ? [1] : []
+      content {
+        name  = "WEB_S3_BUCKET_NAME"
+        value = var.web_s3_bucket_name
+      }
+    }
   }
 
   logs_config {
@@ -815,8 +828,8 @@ resource "aws_codepipeline" "pipeline" {
       configuration = {
         ConnectionArn    = var.codestar_connection_arn
         FullRepositoryId = var.repository_id
-        BranchName       = var.branch_name
-        DetectChanges    = var.detect_changes
+        BranchName       = var.branch_name != "" ? var.branch_name : "main"
+        DetectChanges    = tostring(var.detect_changes)
       }
     }
   }

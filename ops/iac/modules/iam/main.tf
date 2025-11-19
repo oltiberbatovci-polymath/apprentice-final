@@ -91,8 +91,8 @@ resource "aws_iam_role_policy" "ecs_task_execution_rds_secret" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
