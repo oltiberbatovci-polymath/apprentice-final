@@ -162,7 +162,7 @@ resource "aws_cloudfront_distribution" "main" {
   origin {
     domain_name         = var.alb_dns_name
     origin_id           = "alb-origin"
-    connection_attempts  = 3
+    connection_attempts = 3
     connection_timeout  = 10
     origin_path         = ""
     custom_origin_config {
@@ -170,7 +170,7 @@ resource "aws_cloudfront_distribution" "main" {
       https_port               = 443
       origin_protocol_policy   = "https-only"
       origin_ssl_protocols     = ["TLSv1.2"]
-      origin_keepalive_timeout  = 5
+      origin_keepalive_timeout = 5
       origin_read_timeout      = 30
     }
   }

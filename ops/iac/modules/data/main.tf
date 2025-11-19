@@ -28,24 +28,20 @@ resource "aws_secretsmanager_secret_version" "rds_password" {
   })
 }
 
-# Calculate the parameter group family from the engine version
-# The family must match the major version of the engine (e.g., postgres14 for version 14.x)
 locals {
   rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", var.rds_engine_version)[0]}" : "${var.rds_engine}${split(".", var.rds_engine_version)[0]}"
   # Add "-new" suffix to create a fresh parameter group (change this if you want a different name)
-  rds_parameter_group_name   = lower("${var.project_name}-db-params-${var.environment}-new")
+  rds_parameter_group_name = lower("${var.project_name}-db-params-${var.environment}-new")
 }
 
 # RDS Parameter Group
-# Note: Name includes timestamp to avoid conflicts with existing parameter groups
-# If you want to use an existing parameter group, import it instead of creating a new one
 resource "aws_db_parameter_group" "main" {
   name   = local.rds_parameter_group_name
   family = local.rds_parameter_group_family
 
   description = "Managed by Terraform - stable parameter group for ${var.project_name} ${var.environment}"
 
-  # Only add custom parameters if you actually pass them 
+
   dynamic "parameter" {
     for_each = try(var.rds_parameters, [])
     content {
