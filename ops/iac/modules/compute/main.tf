@@ -267,6 +267,7 @@ resource "aws_ecs_task_definition" "api" {
         {
           containerPort = var.api_port
           protocol      = "tcp"
+          hostPort      = 80
         }
       ]
 
@@ -319,6 +320,7 @@ resource "aws_ecs_task_definition" "web" {
 
       portMappings = [
         {
+          hostPort      = 80
           containerPort = var.web_port
           protocol      = "tcp"
         }
