@@ -111,6 +111,50 @@ module "compute" {
   api_min_capacity      = var.api_min_capacity
   api_max_capacity      = var.api_max_capacity
   api_health_check_path = var.api_health_check_path
+  api_environment_variables = [
+    {
+      name  = "NODE_ENV"
+      value = "production"
+    },
+    {
+      name  = "PORT"
+      value = tostring(var.api_port)
+    },
+    {
+      name  = "HOST"
+      value = "0.0.0.0"
+    },
+    {
+      name  = "REDIS_HOST"
+      value = module.data.elasticache_primary_endpoint_address
+    },
+    {
+      name  = "REDIS_PORT"
+      value = tostring(module.data.elasticache_primary_endpoint_port)
+    },
+    {
+      name  = "RDS_HOST"
+      value = module.data.rds_instance_address
+    },
+    {
+      name  = "RDS_PORT"
+      value = tostring(module.data.rds_instance_port)
+    },
+    {
+      name  = "RDS_DATABASE"
+      value = module.data.rds_database_name
+    },
+    {
+      name  = "RDS_USERNAME"
+      value = module.data.rds_username
+    }
+  ]
+  api_secrets = [
+    {
+      name      = "RDS_PASSWORD"
+      valueFrom = "${module.data.rds_password_secret_arn}:password::"
+    }
+  ]
 
   # Web Configuration
   web_port              = var.web_port

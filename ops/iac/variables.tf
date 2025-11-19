@@ -80,9 +80,9 @@ variable "rds_database_name" {
 }
 
 variable "rds_username" {
-  description = "RDS master username"
+  description = "RDS master username (cannot be 'admin', 'postgres', or other reserved words)"
   type        = string
-  default     = "admin"
+  default     = "dbadmin"
 }
 
 variable "rds_password" {
@@ -156,7 +156,7 @@ variable "api_health_check_path" {
 variable "web_port" {
   description = "Port for Web container"
   type        = number
-  default     = 80
+  default     = 3000
 }
 
 variable "web_cpu" {

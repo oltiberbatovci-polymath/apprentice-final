@@ -124,7 +124,7 @@ variable "api_secrets" {
 variable "web_port" {
   description = "Port for Web container"
   type        = number
-  default     = 80
+  default     = 3000
 }
 
 variable "web_cpu" {
@@ -178,7 +178,7 @@ variable "web_health_check_path" {
 variable "web_health_check_command" {
   description = "Health check command for Web container"
   type        = string
-  default     = "curl -f http://localhost:80/ || exit 1"
+  default     = "curl -f http://localhost:3000/ || exit 1"
 }
 
 variable "web_environment_variables" {
