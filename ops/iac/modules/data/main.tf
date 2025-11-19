@@ -30,7 +30,7 @@ resource "aws_secretsmanager_secret_version" "rds_password" {
 
 # RDS Parameter Group
 resource "aws_db_parameter_group" "main" {
-  name   = lower("${var.project_name}-db-params-${var.environment}")
+  name   = lower("${var.project_name}-db-params-${var.environment}-${replace(var.rds_engine_version, ".", "-")}")
   family = var.rds_engine == "postgres" ? "postgres${split(".", var.rds_engine_version)[0]}" : "${var.rds_engine}${split(".", var.rds_engine_version)[0]}"
 
   tags = merge(
