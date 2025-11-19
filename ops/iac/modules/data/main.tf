@@ -107,7 +107,7 @@ resource "aws_db_instance" "main" {
   maintenance_window      = var.rds_maintenance_window
 
   # Allow major version upgrade if needed (required when modifying parameter groups)
-  allow_major_version_upgrade = false
+  allow_major_version_upgrade = true
 
   enabled_cloudwatch_logs_exports = var.rds_cloudwatch_logs_exports
 

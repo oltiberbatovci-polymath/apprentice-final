@@ -20,7 +20,7 @@ phases:
       - echo "Deploy started on $(date)"
       - echo "S3 Bucket - ${WEB_S3_BUCKET_NAME}"
       - echo "Verifying S3 bucket exists..."
-      - aws s3 ls s3://${WEB_S3_BUCKET_NAME} || (echo "ERROR - S3 bucket ${WEB_S3_BUCKET_NAME} not found" && exit 1)
+      - aws s3api head-bucket --bucket ${WEB_S3_BUCKET_NAME} || (echo "ERROR - S3 bucket ${WEB_S3_BUCKET_NAME} not found or inaccessible" && exit 1)
       - echo "✓ S3 bucket verified"
 
   build:

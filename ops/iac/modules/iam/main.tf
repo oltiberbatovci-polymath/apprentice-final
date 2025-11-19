@@ -80,6 +80,28 @@ resource "aws_iam_role_policy" "ecs_task_secrets" {
   })
 }
 
+data "aws_caller_identity" "current" {}
+
+# Give task execution role access to the RDS password secret
+resource "aws_iam_role_policy" "ecs_task_execution_rds_secret" {
+  name = "ecs-task-execution-rds-secret-access"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:ApprenticeFinal-rds-password-${var.environment}-*"
+      }
+    ]
+  })
+}
+
 # Policy for ECS Task Role - Access to SSM Parameter Store
 resource "aws_iam_role_policy" "ecs_task_ssm" {
   count = length(var.ssm_parameter_arns) > 0 ? 1 : 0
