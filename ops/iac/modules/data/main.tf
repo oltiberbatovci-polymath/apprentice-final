@@ -106,6 +106,9 @@ resource "aws_db_instance" "main" {
   backup_window           = var.rds_backup_window
   maintenance_window      = var.rds_maintenance_window
 
+  # Allow major version upgrade if needed (required when modifying parameter groups)
+  allow_major_version_upgrade = false
+
   enabled_cloudwatch_logs_exports = var.rds_cloudwatch_logs_exports
 
   tags = merge(
