@@ -16,8 +16,8 @@ phases:
     commands:
       - echo "Starting Web Test Phase..."
       - echo "Test started on $(date)"
-      - echo "Waiting for service to be ready..."
-      - sleep 30
+      - echo "Waiting for service to be ready (deployment may take several minutes)..."
+      - sleep 60
 
   build:
     commands:
@@ -25,26 +25,62 @@ phases:
       - export WEB_URL=${ALB_DNS_NAME}
       - echo "Web URL - $WEB_URL"
       - |
-        export MAX_RETRIES=10
+        export MAX_RETRIES=20
         export RETRY_COUNT=0
+        export RETRY_INTERVAL=15
+        
         while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
           echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $WEB_URL || echo "000")
+          
+          # Get HTTP status code
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $WEB_URL 2>&1 || echo "000")
           echo "HTTP Status Code - $HTTP_CODE"
+          
+          # Get more details on error
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "301" ] && [ "$HTTP_CODE" != "302" ]; then
+            echo "Response details:"
+            curl -v $WEB_URL 2>&1 | head -20 || echo "Could not connect to $WEB_URL"
+            
+            # Explain common error codes
+            case "$HTTP_CODE" in
+              "502")
+                echo "⚠ 502 Bad Gateway: ALB cannot reach healthy targets. Service may still be deploying or containers may be unhealthy."
+                ;;
+              "503")
+                echo "⚠ 503 Service Unavailable: Service is temporarily unavailable."
+                ;;
+              "504")
+                echo "⚠ 504 Gateway Timeout: Request timed out."
+                ;;
+              "000")
+                echo "⚠ Connection failed: Could not reach the endpoint."
+                ;;
+            esac
+          fi
           
           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
             echo "✓ Web frontend is accessible!"
+            echo "Final response:"
+            curl -s -I $WEB_URL | head -10
             exit 0
           fi
           
           RETRY_COUNT=$((RETRY_COUNT + 1))
           if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            echo "Waiting 10 seconds before retry..."
-            sleep 10
+            echo "Waiting $RETRY_INTERVAL seconds before retry..."
+            sleep $RETRY_INTERVAL
           fi
         done
         
         echo "✗ Web frontend check failed after $MAX_RETRIES attempts"
+        echo "Last attempt details:"
+        curl -v $WEB_URL 2>&1 | head -30
+        echo ""
+        echo "Possible issues:"
+        echo "  - Web service containers may not be running"
+        echo "  - Health checks may be failing"
+        echo "  - Service may still be deploying (check ECS service status)"
+        echo "  - Target group may have no healthy targets"
         exit 1
 
   post_build:
