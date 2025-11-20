@@ -1,5 +1,5 @@
 # CodePipeline Module
-# Creates a CodePipeline with CodeBuild for CI/CD
+# Creates a CodePipeline with CodeBuild for CI/CDs
 
 # S3 Bucket for Pipeline Artifacts
 resource "aws_s3_bucket" "pipeline_artifacts" {
