@@ -528,6 +528,18 @@ resource "aws_iam_role_policy" "codebuild_infrastructure_policy" {
       {
         Effect = "Allow"
         Action = [
+          "codestar-connections:PassConnection"
+        ]
+        Resource = var.codestar_connection_arn != "" ? var.codestar_connection_arn : "*"
+        Condition = {
+          StringEqualsIfExists = {
+            "codestar-connections:PassedToService" = "codepipeline.amazonaws.com"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "events:*"
         ]
         Resource = "*"
