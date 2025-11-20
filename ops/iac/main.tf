@@ -261,9 +261,9 @@ module "web_pipeline" {
   codestar_connection_arn = var.codestar_connection_arn
   repository_id           = var.repository_id
   branch_name             = var.branch_name
-  buildspec_path          = "cicd/web/buildspec-web.yml"
-  deploy_buildspec_path   = "cicd/web/buildspec-deploy.yml"
-  test_buildspec_path     = "cicd/web/buildspec-test.yml"
+  buildspec_path          = "ops/cicd/web/buildspec-web.yml"
+  deploy_buildspec_path   = "ops/cicd/web/buildspec-deploy.yml"
+  test_buildspec_path     = "ops/cicd/web/buildspec-test.yml"
 
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "aws/codebuild/standard:7.0"
@@ -300,9 +300,9 @@ module "api_pipeline" {
   codestar_connection_arn = var.codestar_connection_arn
   repository_id           = var.repository_id
   branch_name             = var.branch_name
-  buildspec_path          = "cicd/api/buildspec-api.yml"
-  deploy_buildspec_path   = "cicd/api/buildspec-deploy.yml"
-  test_buildspec_path     = "cicd/api/buildspec-test.yml"
+  buildspec_path          = "ops/cicd/api/buildspec-api.yml"
+  deploy_buildspec_path   = "ops/cicd/api/buildspec-deploy.yml"
+  test_buildspec_path     = "ops/cicd/api/buildspec-test.yml"
 
   build_compute_type = "BUILD_GENERAL1_SMALL"
   build_image        = "aws/codebuild/standard:7.0"
@@ -339,8 +339,8 @@ module "infrastructure_pipeline" {
   codestar_connection_arn = var.codestar_connection_arn
   repository_id           = var.repository_id
   branch_name             = var.branch_name
-  buildspec_path          = "cicd/infrastructure/buildspec-infrastructure.yml"
-  apply_buildspec_path    = "cicd/infrastructure/buildspec-apply.yml"
+  buildspec_path          = "ops/cicd/infrastructure/buildspec-infrastructure.yml"
+  apply_buildspec_path    = "ops/cicd/infrastructure/buildspec-apply.yml"
   enable_approval_stage   = true
   approval_stage_name     = "Approval"
 
