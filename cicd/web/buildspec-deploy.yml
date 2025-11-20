@@ -6,14 +6,6 @@ env:
     AWS_DEFAULT_REGION: ${AWS_REGION}
 
 phases:
-  install:
-    runtime-versions:
-      nodejs: 20
-    commands:
-      - echo "Installing AWS CLI..."
-      - apt-get update && apt-get install -y awscli
-      - aws --version
-
   pre_build:
     commands:
       - echo "Starting Web Deploy Phase..."
@@ -22,55 +14,101 @@ phases:
       - echo "Verifying S3 bucket exists..."
       - aws s3api head-bucket --bucket ${WEB_S3_BUCKET_NAME} || (echo "ERROR - S3 bucket ${WEB_S3_BUCKET_NAME} not found or inaccessible" && exit 1)
       - echo "✓ S3 bucket verified"
+      - echo "Checking for build artifacts..."
+      - echo "Current directory: $(pwd)"
+      - echo "Listing contents..."
+      - ls -la
+      - echo "Checking CODEBUILD_SRC_DIR..."
+      - ls -la ${CODEBUILD_SRC_DIR} || echo "CODEBUILD_SRC_DIR not set"
+      - echo "Artifacts should be in the current directory or CODEBUILD_SRC_DIR"
 
   build:
     commands:
       - echo "Deploying web application to S3..."
-      - echo "Source directory - packages/web/dist"
-      - ls -la packages/web/dist/ || (echo "ERROR - dist directory not found. Make sure build stage completed successfully." && exit 1)
-      - echo "Syncing files to S3..."
-      - aws s3 sync packages/web/dist/ s3://${WEB_S3_BUCKET_NAME}/ --delete --exact-timestamps
-      - echo "✓ Files synced to S3"
-      - echo "Setting cache control headers..."
+      - echo "Looking for build artifacts..."
       - |
-        # Set cache headers for different file types
+        # Artifacts from build stage are extracted to the working directory
+        # The build stage outputs from packages/web/dist with base-directory,
+        # so the contents are extracted to the root of CODEBUILD_SRC_DIR
+        # Check if artifacts are at root (most likely) or in original structure
+        DEPLOY_DIR=""
+        
+        # First, check for actual build artifacts at root (most common case)
+        if [ -f "index.html" ] || [ -d "assets" ]; then
+          echo "Found build artifacts at root (from build stage artifacts)"
+          DEPLOY_DIR="."
+        # Check for dist directory at root
+        elif [ -d "dist" ] && ([ -f "dist/index.html" ] || [ -d "dist/assets" ]); then
+          echo "Found dist/ directory at root with build artifacts"
+          DEPLOY_DIR="dist"
+        # Check for packages/web/dist (fallback - should not happen with base-directory)
+        elif [ -d "packages/web/dist" ] && ([ -f "packages/web/dist/index.html" ] || [ -d "packages/web/dist/assets" ]); then
+          echo "Found dist/ directory at packages/web/dist"
+          DEPLOY_DIR="packages/web/dist"
+        else
+          echo "ERROR - build artifacts not found"
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo ""
+          echo "Checking for index.html:"
+          find . -name "index.html" -type f 2>/dev/null | head -5 || echo "No index.html found"
+          echo ""
+          echo "Checking for assets directory:"
+          find . -name "assets" -type d 2>/dev/null | head -5 || echo "No assets directory found"
+          echo ""
+          echo "Checking CODEBUILD_SRC_DIR:"
+          if [ -n "${CODEBUILD_SRC_DIR}" ]; then
+            echo "CODEBUILD_SRC_DIR=${CODEBUILD_SRC_DIR}"
+            ls -la ${CODEBUILD_SRC_DIR} 2>/dev/null || echo "Cannot list CODEBUILD_SRC_DIR"
+          fi
+          exit 1
+        fi
+        
+        # Verify the deploy directory actually contains build artifacts
+        if [ ! -f "${DEPLOY_DIR}/index.html" ] && [ ! -d "${DEPLOY_DIR}/assets" ]; then
+          echo "ERROR - Deploy directory ${DEPLOY_DIR} does not contain build artifacts"
+          echo "Contents of ${DEPLOY_DIR}:"
+          ls -la ${DEPLOY_DIR}/
+          exit 1
+        fi
+        
+        export DEPLOY_DIR
+      - echo "Source directory - ${DEPLOY_DIR}"
+      - echo "Verifying build artifacts exist..."
+      - test -f "${DEPLOY_DIR}/index.html" && echo "✓ index.html found" || echo "⚠ index.html not found"
+      - test -d "${DEPLOY_DIR}/assets" && echo "✓ assets directory found" || echo "⚠ assets directory not found"
+      - echo "Listing files to deploy:"
+      - ls -la ${DEPLOY_DIR}/ | head -20
+      - echo "Syncing files to S3 bucket ${WEB_S3_BUCKET_NAME}..."
+      - aws s3 sync ${DEPLOY_DIR}/ s3://${WEB_S3_BUCKET_NAME}/ --delete --exact-timestamps
+      - echo "Files synced to S3"
+
+      - echo "Setting proper cache headers..."
+      - |
         aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
-          --recursive \
-          --exclude "*" \
-          --include "*.html" \
+          --recursive --exclude "*" --include "*.html" \
           --cache-control "no-cache, no-store, must-revalidate" \
           --metadata-directive REPLACE || true
+
         aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
-          --recursive \
-          --exclude "*" \
-          --include "*.js" \
-          --include "*.css" \
+          --recursive --exclude "*" --include "*.js" --include "*.css" \
           --cache-control "public, max-age=31536000, immutable" \
           --metadata-directive REPLACE || true
+
         aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
-          --recursive \
-          --exclude "*" \
-          --include "*.png" \
-          --include "*.jpg" \
-          --include "*.jpeg" \
-          --include "*.gif" \
-          --include "*.svg" \
-          --include "*.ico" \
+          --recursive --exclude "*" --include "*.png" --include "*.jpg" --include "*.jpeg" --include "*.gif" --include "*.svg" --include "*.ico" \
           --cache-control "public, max-age=31536000, immutable" \
           --metadata-directive REPLACE || true
-      - echo "✓ Cache headers set"
-      - echo "Listing deployed files..."
+
+      - echo "Cache headers applied"
+      - echo "Listing first 20 uploaded objects..."
       - aws s3 ls s3://${WEB_S3_BUCKET_NAME}/ --recursive | head -20
 
-  post_build:
-    commands:
-      - echo "Post-deploy phase for Web..."
-      - echo "Deployment completed on $(date)"
-      - echo "S3 Bucket - ${WEB_S3_BUCKET_NAME}"
-      - echo "✓ Web application deployed to S3 successfully"
-      - echo "Note - CloudFront cache invalidation is not needed for immediate updates"
+      - echo "Web application deployed successfully!"
+      - echo "URL: http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
 
 artifacts:
   files:
     - '**/*'
-  name: web-deploy-artifact
+  name: web-deploy-artifact-${CODEBUILD_BUILD_ID}

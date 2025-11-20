@@ -31,7 +31,7 @@ resource "aws_secretsmanager_secret_version" "rds_password" {
 locals {
   rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", var.rds_engine_version)[0]}" : "${var.rds_engine}${split(".", var.rds_engine_version)[0]}"
   # Add "-new" suffix to create a fresh parameter group (change this if you want a different name)
-  rds_parameter_group_name = lower("${var.project_name}-db-params-${var.environment}-new")
+  rds_parameter_group_name = lower("${var.project_name}-db-params-${var.environment}-new-1")
 }
 
 # RDS Parameter Group
