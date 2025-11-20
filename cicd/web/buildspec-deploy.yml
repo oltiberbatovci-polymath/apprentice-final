@@ -104,7 +104,7 @@ phases:
       - echo "Listing first 20 uploaded objects..."
       - aws s3 ls s3://${WEB_S3_BUCKET_NAME}/ --recursive | head -20
       - echo "Web application deployed successfully!"
-      - echo "URL: http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
+      - echo "URL - http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
 artifacts:
   files:
     - '**/*'

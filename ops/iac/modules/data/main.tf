@@ -28,46 +28,6 @@ resource "aws_secretsmanager_secret_version" "rds_password" {
   })
 }
 
-# Data source to read existing RDS instance (if it exists) to get the actual engine version
-# This helps ensure parameter group family matches the actual instance version
-data "aws_db_instance" "existing" {
-  count                  = 1
-  db_instance_identifier = lower("db-${var.project_name}-${var.environment}")
-}
-
-locals {
-  actual_engine_version      = length(data.aws_db_instance.existing) > 0 && data.aws_db_instance.existing[0].engine_version != null ? data.aws_db_instance.existing[0].engine_version : var.rds_engine_version
-  rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", local.actual_engine_version)[0]}" : "${var.rds_engine}${split(".", local.actual_engine_version)[0]}"
-  rds_parameter_group_name   = lower("${var.project_name}-db-params-${var.environment}-new-1")
-}
-
-# RDS Parameter Group
-resource "aws_db_parameter_group" "main" {
-  name   = local.rds_parameter_group_name
-  family = local.rds_parameter_group_family
-
-  description = "Managed by Terraform - stable parameter group for ${var.project_name} ${var.environment}"
-
-  dynamic "parameter" {
-    for_each = try(var.rds_parameters, [])
-    content {
-      name         = parameter.value.name
-      value        = parameter.value.value
-      apply_method = lookup(parameter.value, "apply_method", "immediate")
-    }
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-db-params-${var.environment}"
-    }
-  )
-}
 
 # RDS Subnet Group (passed from network module)
 # Using the name directly instead of data source to avoid dependency issues
@@ -122,9 +82,8 @@ resource "aws_db_instance" "main" {
 
   db_subnet_group_name   = var.database_subnet_group_name
   vpc_security_group_ids = [aws_security_group.rds.id]
-  # Parameter group family must match the instance engine version family
-  # If you get an error about family mismatch, ensure rds_engine_version matches the instance version
-  parameter_group_name = aws_db_parameter_group.main.name
+  # Using default parameter group - no custom parameters needed
+  parameter_group_name = null
 
   multi_az                  = var.rds_multi_az
   publicly_accessible       = false
@@ -136,7 +95,6 @@ resource "aws_db_instance" "main" {
   backup_window           = var.rds_backup_window
   maintenance_window      = var.rds_maintenance_window
 
-  # Allow major version upgrade if needed (required when modifying parameter groups)
   allow_major_version_upgrade = true
 
   enabled_cloudwatch_logs_exports = var.rds_cloudwatch_logs_exports
@@ -182,26 +140,6 @@ resource "aws_security_group" "elasticache" {
   )
 }
 
-# Elasticache Parameter Group
-resource "aws_elasticache_parameter_group" "main" {
-  name   = lower("${var.project_name}-cache-params-${var.environment}")
-  family = var.elasticache_parameter_group_family
-
-  dynamic "parameter" {
-    for_each = var.elasticache_parameters
-    content {
-      name  = parameter.value.name
-      value = parameter.value.value
-    }
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-cache-params-${var.environment}"
-    }
-  )
-}
 
 # Elasticache Replication Group (Redis)
 resource "aws_elasticache_replication_group" "main" {
@@ -212,7 +150,8 @@ resource "aws_elasticache_replication_group" "main" {
   engine_version       = var.elasticache_engine_version
   node_type            = var.elasticache_node_type
   port                 = var.elasticache_port
-  parameter_group_name = aws_elasticache_parameter_group.main.name
+  # Using default parameter group - no custom parameters needed
+  parameter_group_name = null
 
   num_cache_clusters         = var.elasticache_num_cache_nodes
   automatic_failover_enabled = var.elasticache_automatic_failover

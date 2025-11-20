@@ -126,16 +126,6 @@ variable "rds_cloudwatch_logs_exports" {
   default     = ["postgresql", "upgrade"]
 }
 
-variable "rds_parameters" {
-  description = "List of custom RDS parameter group parameters"
-  type = list(object({
-    name         = string
-    value        = string
-    apply_method = optional(string, "immediate")
-  }))
-  default = []
-}
-
 # Elasticache Variables
 variable "elasticache_engine_version" {
   description = "Elasticache Redis engine version"
@@ -171,21 +161,6 @@ variable "elasticache_multi_az" {
   description = "Enable Multi-AZ"
   type        = bool
   default     = false
-}
-
-variable "elasticache_parameter_group_family" {
-  description = "Elasticache parameter group family"
-  type        = string
-  default     = "redis7"
-}
-
-variable "elasticache_parameters" {
-  description = "List of Elasticache parameters"
-  type = list(object({
-    name  = string
-    value = string
-  }))
-  default = []
 }
 
 variable "elasticache_transit_encryption" {

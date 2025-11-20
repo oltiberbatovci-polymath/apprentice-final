@@ -37,11 +37,6 @@ phases:
         if [ -n "$WEB_TG_ARN" ] && [ "$WEB_TG_ARN" != "None" ]; then
           terraform import module.compute.aws_lb_target_group.web "$WEB_TG_ARN" 2>/dev/null || echo "Web target group already in state or import failed"
         fi
-      - |
-        # Try to import RDS parameter group if it exists
-        if aws rds describe-db-parameter-groups --db-parameter-group-name apprenticefinal-db-params-staging --query 'DBParameterGroups[0].DBParameterGroupName' --output text 2>/dev/null | grep -q "apprenticefinal-db-params-staging"; then
-          terraform import module.data.aws_db_parameter_group.main apprenticefinal-db-params-staging 2>/dev/null || echo "RDS parameter group already in state or import failed"
-        fi
       - echo "Running terraform plan..."
       - terraform plan -var="owner=${TF_VAR_owner}" -var="codestar_connection_arn=${TF_VAR_codestar_connection_arn}" -var="repository_id=${TF_VAR_repository_id}" -out=tfplan
       - echo "Terraform plan completed"
