@@ -28,9 +28,16 @@ resource "aws_secretsmanager_secret_version" "rds_password" {
   })
 }
 
+# Data source to read existing RDS instance (if it exists) to get the actual engine version
+# This helps ensure parameter group family matches the actual instance version
+data "aws_db_instance" "existing" {
+  count                  = 1
+  db_instance_identifier = lower("db-${var.project_name}-${var.environment}")
+}
+
 locals {
-  rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", var.rds_engine_version)[0]}" : "${var.rds_engine}${split(".", var.rds_engine_version)[0]}"
-  # Add "-new" suffix to create a fresh parameter group (change this if you want a different name)
+  actual_engine_version = length(data.aws_db_instance.existing) > 0 && data.aws_db_instance.existing[0].engine_version != null ? data.aws_db_instance.existing[0].engine_version : var.rds_engine_version
+  rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", local.actual_engine_version)[0]}" : "${var.rds_engine}${split(".", local.actual_engine_version)[0]}"
   rds_parameter_group_name = lower("${var.project_name}-db-params-${var.environment}-new-1")
 }
 

@@ -13,9 +13,9 @@ phases:
       - echo "S3 Bucket - ${WEB_S3_BUCKET_NAME}"
       - echo "Verifying S3 bucket exists..."
       - aws s3api head-bucket --bucket ${WEB_S3_BUCKET_NAME} || (echo "ERROR - S3 bucket ${WEB_S3_BUCKET_NAME} not found or inaccessible" && exit 1)
-      - echo "✓ S3 bucket verified"
+      - echo "S3 bucket verified"
       - echo "Checking for build artifacts..."
-      - echo "Current directory: $(pwd)"
+      - echo "Current directory - $(pwd)"
       - echo "Listing contents..."
       - ls -la
       - echo "Checking CODEBUILD_SRC_DIR..."
@@ -76,14 +76,13 @@ phases:
         export DEPLOY_DIR
       - echo "Source directory - ${DEPLOY_DIR}"
       - echo "Verifying build artifacts exist..."
-      - test -f "${DEPLOY_DIR}/index.html" && echo "✓ index.html found" || echo "⚠ index.html not found"
-      - test -d "${DEPLOY_DIR}/assets" && echo "✓ assets directory found" || echo "⚠ assets directory not found"
+      - test -f "${DEPLOY_DIR}/index.html" && echo "index.html found" || echo "WARNING: index.html not found"
+      - test -d "${DEPLOY_DIR}/assets" && echo "assets directory found" || echo "WARNING: assets directory not found"
       - echo "Listing files to deploy:"
       - ls -la ${DEPLOY_DIR}/ | head -20
       - echo "Syncing files to S3 bucket ${WEB_S3_BUCKET_NAME}..."
       - aws s3 sync ${DEPLOY_DIR}/ s3://${WEB_S3_BUCKET_NAME}/ --delete --exact-timestamps
       - echo "Files synced to S3"
-
       - echo "Setting proper cache headers..."
       - |
         aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
@@ -104,10 +103,8 @@ phases:
       - echo "Cache headers applied"
       - echo "Listing first 20 uploaded objects..."
       - aws s3 ls s3://${WEB_S3_BUCKET_NAME}/ --recursive | head -20
-
       - echo "Web application deployed successfully!"
       - echo "URL: http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
-
 artifacts:
   files:
     - '**/*'
