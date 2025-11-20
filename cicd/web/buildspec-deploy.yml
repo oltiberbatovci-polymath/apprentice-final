@@ -16,11 +16,18 @@ phases:
       - echo "S3 bucket verified"
       - echo "Checking for build artifacts..."
       - echo "Current directory - $(pwd)"
-      - echo "Listing contents..."
+      - echo "CODEBUILD_SRC_DIR - ${CODEBUILD_SRC_DIR}"
+      - echo "Listing current directory contents..."
       - ls -la
-      - echo "Checking CODEBUILD_SRC_DIR..."
-      - ls -la ${CODEBUILD_SRC_DIR} || echo "CODEBUILD_SRC_DIR not set"
-      - echo "Artifacts should be in the current directory or CODEBUILD_SRC_DIR"
+      - echo ""
+      - echo "Checking CODEBUILD_SRC_DIR contents..."
+      - ls -la ${CODEBUILD_SRC_DIR} 2>/dev/null || echo "CODEBUILD_SRC_DIR not accessible"
+      - echo ""
+      - echo "Searching for index.html..."
+      - find . -name "index.html" -type f 2>/dev/null | head -10 || echo "No index.html found"
+      - echo ""
+      - echo "Searching for assets directory..."
+      - find . -name "assets" -type d 2>/dev/null | head -10 || echo "No assets directory found"
 
   build:
     commands:
@@ -41,6 +48,10 @@ phases:
         elif [ -d "dist" ] && ([ -f "dist/index.html" ] || [ -d "dist/assets" ]); then
           echo "Found dist/ directory at root with build artifacts"
           DEPLOY_DIR="dist"
+        # Check CODEBUILD_SRC_DIR for artifacts
+        elif [ -n "${CODEBUILD_SRC_DIR}" ] && ([ -f "${CODEBUILD_SRC_DIR}/index.html" ] || [ -d "${CODEBUILD_SRC_DIR}/assets" ]); then
+          echo "Found build artifacts in CODEBUILD_SRC_DIR"
+          DEPLOY_DIR="${CODEBUILD_SRC_DIR}"
         # Check for packages/web/dist (fallback - should not happen with base-directory)
         elif [ -d "packages/web/dist" ] && ([ -f "packages/web/dist/index.html" ] || [ -d "packages/web/dist/assets" ]); then
           echo "Found dist/ directory at packages/web/dist"
@@ -51,17 +62,19 @@ phases:
           echo "Directory contents:"
           ls -la
           echo ""
-          echo "Checking for index.html:"
-          find . -name "index.html" -type f 2>/dev/null | head -5 || echo "No index.html found"
-          echo ""
-          echo "Checking for assets directory:"
-          find . -name "assets" -type d 2>/dev/null | head -5 || echo "No assets directory found"
-          echo ""
-          echo "Checking CODEBUILD_SRC_DIR:"
+          echo "CODEBUILD_SRC_DIR: ${CODEBUILD_SRC_DIR}"
           if [ -n "${CODEBUILD_SRC_DIR}" ]; then
-            echo "CODEBUILD_SRC_DIR=${CODEBUILD_SRC_DIR}"
+            echo "CODEBUILD_SRC_DIR contents:"
             ls -la ${CODEBUILD_SRC_DIR} 2>/dev/null || echo "Cannot list CODEBUILD_SRC_DIR"
           fi
+          echo ""
+          echo "Checking for index.html:"
+          find . -name "index.html" -type f 2>/dev/null | head -10 || echo "No index.html found"
+          echo ""
+          echo "Checking for assets directory:"
+          find . -name "assets" -type d 2>/dev/null | head -10 || echo "No assets directory found"
+          echo ""
+          echo "ERROR: Build artifacts from build stage not found. Make sure the build stage completed successfully."
           exit 1
         fi
         
