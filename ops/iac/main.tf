@@ -1,5 +1,5 @@
 # Main Terraform Configuration
-# Orchestrates all infrastructure modules
+# Orchestrates all infrastructure module
 
 provider "aws" {
   region = var.aws_region
