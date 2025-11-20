@@ -1,5 +1,5 @@
 # Backend Module
-# Creates S3 bucket and DynamoDB table for Terraform remote state
+# Creates S3 bucket and DynamoDB table for Terraform remotestate
 
 # S3 Bucket for Terraform State
 resource "aws_s3_bucket" "terraform_state" {
