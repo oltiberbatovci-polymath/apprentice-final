@@ -76,8 +76,8 @@ phases:
         export DEPLOY_DIR
       - echo "Source directory - ${DEPLOY_DIR}"
       - echo "Verifying build artifacts exist..."
-      - test -f "${DEPLOY_DIR}/index.html" && echo "index.html found" || echo "WARNING: index.html not found"
-      - test -d "${DEPLOY_DIR}/assets" && echo "assets directory found" || echo "WARNING: assets directory not found"
+      - test -f "${DEPLOY_DIR}/index.html" && echo "index.html found" || echo "WARNING - index.html not found"
+      - test -d "${DEPLOY_DIR}/assets" && echo "assets directory found" || echo "WARNING - assets directory not found"
       - echo "Listing files to deploy:"
       - ls -la ${DEPLOY_DIR}/ | head -20
       - echo "Syncing files to S3 bucket ${WEB_S3_BUCKET_NAME}..."
