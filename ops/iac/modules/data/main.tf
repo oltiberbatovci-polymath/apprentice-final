@@ -36,9 +36,9 @@ data "aws_db_instance" "existing" {
 }
 
 locals {
-  actual_engine_version = length(data.aws_db_instance.existing) > 0 && data.aws_db_instance.existing[0].engine_version != null ? data.aws_db_instance.existing[0].engine_version : var.rds_engine_version
+  actual_engine_version      = length(data.aws_db_instance.existing) > 0 && data.aws_db_instance.existing[0].engine_version != null ? data.aws_db_instance.existing[0].engine_version : var.rds_engine_version
   rds_parameter_group_family = var.rds_engine == "postgres" ? "postgres${split(".", local.actual_engine_version)[0]}" : "${var.rds_engine}${split(".", local.actual_engine_version)[0]}"
-  rds_parameter_group_name = lower("${var.project_name}-db-params-${var.environment}-new-1")
+  rds_parameter_group_name   = lower("${var.project_name}-db-params-${var.environment}-new-1")
 }
 
 # RDS Parameter Group

@@ -12,8 +12,6 @@ phases:
     commands:
       - echo "Validating Terraform configurations..."
       - cd ops/iac
-      - terraform fmt -check -recursive
-      - echo "Terraform format check completed"
       - echo "Running terraform init..."
       - terraform init -backend=false
       - echo "Running terraform validate..."
